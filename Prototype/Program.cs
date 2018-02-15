@@ -19,7 +19,13 @@ namespace Prototype
 
             // Some variables for statistics purposes
             List<int> lengths = new List<int>();
+            List<string> kmersFunFam1 = new List<string>();
+            List<string> kmersFunFam2 = new List<string>();
+            List<string> kmersFunFam3 = new List<string>();
+            List<string> kmersFunFam4 = new List<string>();
+            List<string> kmersFunFam5 = new List<string>();
             int count = 0;
+            int funFam = 0;
 
             // Print k-mers for the whole sequence and for the region
             foreach (Sequence row in td.getData())
@@ -29,6 +35,16 @@ namespace Prototype
                 {
                     lengths.Add(row.getLength());
                     Console.Write(row.getSequence().Substring(row.getRegionX(), row.getLength()));
+
+                    // Generate and store the kmers for the current functional family
+                    switch (funFam)
+                    {
+                        case 0: kmersFunFam1.AddRange(StoreKmers(row.getSequence().Substring(row.getRegionX(), row.getLength()), 3, 0, new List<string>())); break;
+                        case 1: kmersFunFam2.AddRange(StoreKmers(row.getSequence().Substring(row.getRegionX(), row.getLength()), 3, 0, new List<string>())); break;
+                        case 2: kmersFunFam3.AddRange(StoreKmers(row.getSequence().Substring(row.getRegionX(), row.getLength()), 3, 0, new List<string>())); break;
+                        case 3: kmersFunFam4.AddRange(StoreKmers(row.getSequence().Substring(row.getRegionX(), row.getLength()), 3, 0, new List<string>())); break;
+                        case 4: kmersFunFam5.AddRange(StoreKmers(row.getSequence().Substring(row.getRegionX(), row.getLength()), 3, 0, new List<string>())); break;
+                    }
                 }
                 else
                 {
@@ -41,6 +57,7 @@ namespace Prototype
                 {
                     CalculateStatistics(lengths);
                     count = 0;
+                    funFam++;
                     lengths = new List<int>();
                 }
                 Console.WriteLine();
@@ -49,14 +66,22 @@ namespace Prototype
         }
 
         // A recursive method to output all the possible kmers of a particular size
-        static void PrintKmer(string dna, int size, int counter)
+        static List<string> StoreKmers(string dna, int size, int counter, List<string> kmers)
         {
-            Console.WriteLine(dna.Substring(counter, size));
+            // Check if current kmer has already been stored
+            if(!kmers.Contains(dna.Substring(counter, size)))
+            {
+                kmers.Add(dna.Substring(counter, size));
+            }
 
             // Continue outputting the kmers
             if (dna.Length != (counter + size))
             {
-                PrintKmer(dna, size, (counter + 1));
+                return StoreKmers(dna, size, (counter + 1), kmers);
+            }
+            else
+            {
+                return kmers;
             }
         }
 
