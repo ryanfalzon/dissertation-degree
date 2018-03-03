@@ -12,12 +12,21 @@ namespace RegionExtractor
         private string databaseName;
         private string tableName;
         private MySqlConnection connection;
+        
+        // Default constructor - Get new instance
+        public DatabaseConnection()
+        {
+            Console.Write("\nEnter Database Name: ");
+            this.databaseName = Console.ReadLine();
+            Console.Write("Enter Table Name: ");
+            this.tableName = Console.ReadLine();
+        }
 
-        // Constructor
+        // Constructor - Passed instance
         public DatabaseConnection(string databaseName, string tableName)
         {
-            this.DatabaseName = databaseName;
-            this.TableName = tableName;
+            this.databaseName = databaseName;
+            this.tableName = tableName;
         }
 
         // Getters and setters
@@ -33,7 +42,7 @@ namespace RegionExtractor
                 // Initialize a connection and a command
                 try
                 {
-                    connection = new MySqlConnection("host=localhost;user=root;database=" + this.DatabaseName + ";");
+                    connection = new MySqlConnection("host=localhost;user=root;database=" + this.databaseName + ";");
                     connection.Open();
                     return true;
                 }
@@ -61,14 +70,14 @@ namespace RegionExtractor
         }
 
         // A method to query the database for the sequences and functional families
-        public List<Sequence> Query1()
+        public List<DataRow> Query1()
         {
             // Create a query
-            MySqlCommand command = new MySqlCommand(("SELECT * FROM " + TableName + ";"), connection);
+            MySqlCommand command = new MySqlCommand(("SELECT * FROM " + this.tableName + ";"), connection);
             MySqlDataReader reader = command.ExecuteReader();
 
             // Temp variables
-            List<Sequence> data = new List<Sequence>();
+            List<DataRow> data = new List<DataRow>();
             string tempHeader = "";
             string tempSequence;
             string tempRegion;
@@ -94,30 +103,11 @@ namespace RegionExtractor
                 tempY = Convert.ToInt32(tempRegion.Split('-')[1]);
 
                 // Add data to the list
-                data.Add(new Sequence(reader["protein_id"].ToString(), tempHeader, tempSequence, reader["functional_family"].ToString(), tempX, tempY));
+                data.Add(new DataRow(reader["protein_id"].ToString(), tempHeader, tempSequence, reader["functional_family"].ToString(), tempX, tempY));
             }
 
             // Sort the list according to the functional family id
             data = data.OrderBy(s => s.Functional_family).ToList();
-            return data;
-        }
-
-        // A method to get all the functional families from the database
-        public List<FunFam> Query2()
-        {
-            // Create a query
-            MySqlCommand command = new MySqlCommand(("SELECT * FROM " + TableName + ";"), connection);
-            MySqlDataReader reader = command.ExecuteReader();
-
-            // Temp variables
-            List<FunFam> data = new List<FunFam>();
-
-            // Read the data
-            while (reader.Read())
-            {
-                data.Add(new FunFam(reader["cath_funfam_id"].ToString(), reader["cath_family"].ToString(), reader["functional_family"].ToString()));
-            }
-
             return data;
         }
     }

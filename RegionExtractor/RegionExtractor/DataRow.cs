@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace RegionExtractor
 {
-    class Sequence
+    class DataRow
     {
 
         // Private properties
@@ -26,20 +26,20 @@ namespace RegionExtractor
         public string Full_sequence { get => full_sequence; set => full_sequence = value; }
 
         // Constructor
-        public Sequence(string protein_id, string sequence_header, string sequence, string functional_family, int regionX, int regionY)
+        public DataRow(string protein_id, string sequence_header, string sequence, string functional_family, int regionX, int regionY)
         {
-            this.Protein_id = protein_id;
-            this.Sequence_header = sequence_header;
-            this.Full_sequence = sequence;
-            this.Functional_family = functional_family;
-            this.RegionX = regionX;
-            this.RegionY = regionY;
+            this.protein_id = protein_id;
+            this.sequence_header = sequence_header;
+            this.full_sequence = sequence;
+            this.functional_family = functional_family;
+            this.regionX = regionX;
+            this.regionY = regionY;
         }
 
         // Method to calculate the length of the region
-        public int getLength()
+        public int GetLength()
         {
-            return (this.RegionY - this.RegionX) + 1;
+            return (this.regionY - this.regionX) + 1;
         }
     }
 }
