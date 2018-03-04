@@ -107,3 +107,8 @@ C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionEx
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Neo4j.Driver.dll
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Bio.Pamsam.dll
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\ProbabilisticDataStructures.dll
+C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Neo4jClient.dll
+C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Neo4jClient.pdb
+C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Neo4jClient.xml
+C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Newtonsoft.Json.xml

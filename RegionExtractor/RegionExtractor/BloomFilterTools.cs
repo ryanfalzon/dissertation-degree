@@ -4,27 +4,27 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProbabilisticDataStructures;
-using System.Text;
 
 namespace RegionExtractor
 {
-    class BloomFilterGeneration
+    class BloomFilterTools
     {
 
-        // Properties
-        ScalableBloomFilter bloomFilter;
+        // Private properties
+        private ScalableBloomFilter bloomFilter;
 
         // Constructor
-        public BloomFilterGeneration()
+        public BloomFilterTools()
         {
             this.bloomFilter = ScalableBloomFilter.NewDefaultScalableBloomFilter(0.01);
         }
 
         // A method to transfer the contents in the list of kmers in the bloom filter
-        public void Enter(List<string> kmers)
+        public ScalableBloomFilter Enter(List<string> kmers)
         {
             // Temp variables
             byte[] bytes;
+            this.bloomFilter.Reset();
 
             // Iterate through all kmers and add them to the bloom filter
             foreach(string k in kmers)
@@ -33,25 +33,27 @@ namespace RegionExtractor
                 bytes = Encoding.ASCII.GetBytes(k);
 
                 // Add bytes to the bloom filter
-                this.bloomFilter.Add(bytes);
+                bloomFilter.Add(bytes);
             }
+
+            return bloomFilter;
         }
 
         // A method that will check a list of bloom filters and returna another list of bloom filters
-        public List<ScalableBloomFilter> Check(List<ScalableBloomFilter> bloomFilters, byte[] toCheck)
+        public List<string> Check(List<BloomFilterHolder> holders, byte[] toCheck)
         {
             // Temp variables to store the list that will later be returned
-            List<ScalableBloomFilter> bloomFiltersToReturn = new List<ScalableBloomFilter>();
+            List<string> funfamsToCheck = new List<string>();
 
             // Iterate through the passed list and check them
-            foreach(ScalableBloomFilter filter in bloomFilters)
+            foreach(BloomFilterHolder holder in holders)
             {
-                if (filter.Test(toCheck))
+                if (holder.BloomFilter.Test(toCheck))
                 {
-                    bloomFiltersToReturn.Add(filter);
+                    funfamsToCheck.Add(holder.Funfam);
                 }
             }
-            return bloomFiltersToReturn;
+            return funfamsToCheck;
         }
     }
 }
