@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Neo4j.Driver.V1;
 using Neo4jClient.Cypher;
 using Neo4jClient;
+using Newtonsoft.Json;
 
 namespace RegionExtractor
 {
@@ -15,14 +16,18 @@ namespace RegionExtractor
         private string db;              // bolt://localhost
         private string dbUsername;      // neo4j
         private string dbPassword;      // fyp_ryanfalzon
-        private int funFamCount;
+        private GraphClient client;
 
         // Default constructor
         public GraphDatabaseConnection()
         {
-            this.db = "bolt://localhost";
-            this.dbUsername = "neo4j";
-            this.dbPassword = "fyp_ryanfalzon";
+            Console.Write("\nEnter Database Path: ");
+            this.db = Console.ReadLine();
+            Console.Write("Enter Database Username: ");
+            this.dbUsername = Console.ReadLine();
+            Console.Write("Enter Database Password: ");
+            this.dbPassword = Console.ReadLine();
+            Console.WriteLine();
         }
 
         // Constructor
@@ -31,7 +36,6 @@ namespace RegionExtractor
             this.Db = db;
             this.DbUsername = dbUsername;
             this.DbPassword = dbPassword;
-            this.funFamCount = 0;
         }
 
         // Getters and setters
@@ -40,27 +44,47 @@ namespace RegionExtractor
         public string DbPassword { get => dbPassword; set => dbPassword = value; }
 
         // Method to transfer the passed contents to a graph database
-        private void ToGraph(string funFam, List<string> kmers)
+        public void ToGraph(FunctionalFamily funfam)
         {
 
             // Temp variables
-            int kmerCount = 0;
-            string query = "CREATE (f:FunFam {id:\"" + this.funFamCount.ToString() + "\", name:\"" + funFam + "\"}) - [:HAS] -> ";
+            int temp;
+            string query = "CREATE (f:FunFam {name:\"" + funfam.Funfam + "\", consensus:\"" + funfam.ConsensusSequence + "\"}) - [:HAS] -> ";
 
             // Add the kmers to the query
-            for (int i = 0; i < kmers.Count; i++)
+            for (int i = 0; i < funfam.Kmers.Count; i++)
             {
-                query += "(k" + kmerCount.ToString() + ":Kmer {id:\"" + kmerCount.ToString() + "\", name:\"" + kmers[i] + "\"})";
-                kmerCount++;
+                query += "(k" + i + ":Kmer {sequence:\"" + funfam.Kmers.ElementAt(i).K + "\"";
+
+                // Check if current kmer has any offsets
+                if (funfam.Kmers.ElementAt(i).Offsets.Count > 0)
+                {
+                    temp = funfam.Kmers.ElementAt(i).Offsets.ElementAt(0).Index;
+                    query += ", offsetAt" + temp + ":[";
+                    foreach (Offset o in funfam.Kmers.ElementAt(i).Offsets)
+                    {
+                        if (temp == o.Index)
+                        {
+                            query += "\"" + o.Letter + "\", ";
+                        }
+                        else
+                        {
+                            query = query.Remove(query.Count() - 2);
+                            temp = o.Index;
+                            query += "], offsetAt" + temp + ":[";
+                        }
+                    }
+                    query = query.Remove(query.Count() - 2);
+                    query += "]";
+                }
+                query += "})";
 
                 // Check if this is the last kmer
-                if (i != (kmers.Count - 1))
+                if (i != (funfam.Kmers.Count - 1))
                 {
                     query += " - [:NEXT] -> ";
                 }
             }
-
-            funFamCount++;
 
             // Connect to the graph database and run the query
             using (var driver = GraphDatabase.Driver(this.db, AuthTokens.Basic(this.dbUsername, this.dbPassword)))
@@ -70,46 +94,107 @@ namespace RegionExtractor
             }
         }
 
-        // Method to retrieve the passed functional family from the graph database
-        public void FromGraph(string funFam)
+        // Method to connect to the database
+        public void Connect()
         {
             // Create a new client and connect to the database
-            var client = new GraphClient(new Uri("http://localhost:7474/db/data"), this.dbUsername, this.dbPassword);
+            client = new GraphClient(new Uri("http://localhost:7474/db/data"), this.dbUsername, this.dbPassword);
             client.Connect();
+        }
 
+        // Method to retrieve all funfam nodes from the graph database
+        public IEnumerable<F> FromGraph1()
+        {
+            // Run the query
+            var queryResults = client.Cypher
+                .Match("(a:FunFam)")
+                .Return(a => a.As<F>())
+                .Results;
+            return queryResults;
+        }
+
+        // Method to retrieve the passed functional family from the graph database
+        public FunctionalFamily FromGraph2(string funFam)
+        {
             // Run the query
             var queryResults = client.Cypher
                 .Match("(a:FunFam {name: '" + funFam + "'})-[*]-(b)")
                 .Return((a, b) => new
                 {
-                    A = a.As<FunFam>(),
-                    B = b.As<Kmer>(),
+                    funfam = a.As<F>(),
+                    kmer = b.As<K>()
                 })
                 .Results;
+
+            // Typecast the internal classes to the public classes
+            FunctionalFamily toReturn = new FunctionalFamily(queryResults.ElementAt(0).funfam.Name, queryResults.ElementAt(0).funfam.Consensus);
+            Kmer currentKmer;
+            foreach(var row in queryResults)
+            {
+                currentKmer = new Kmer(row.kmer.Sequence);
+
+                // Check if the current kmer has any offsets
+                if (row.kmer.OffsetAt0 != null)
+                {
+                    foreach(var offset in row.kmer.OffsetAt0)
+                    {
+                        currentKmer.Offsets.Add(new Offset(0, offset.ElementAt(0)));
+                    }
+                }
+                if (row.kmer.OffsetAt1 != null)
+                {
+                    foreach (var offset in row.kmer.OffsetAt1)
+                    {
+                        currentKmer.Offsets.Add(new Offset(1, offset.ElementAt(0)));
+                    }
+                }
+                if (row.kmer.OffsetAt2 != null)
+                {
+                    foreach (var offset in row.kmer.OffsetAt2)
+                    {
+                        currentKmer.Offsets.Add(new Offset(2, offset.ElementAt(0)));
+                    }
+                }
+
+                // Add the current kmer to the functional family
+                toReturn.Kmers.Add(currentKmer);
+            }
+
+            return toReturn;
         }
 
         // An internal class used to hold the FunFam node from the graph database
-        internal class FunFam
+        internal class F
         {
             // Private properties
-            private string id;
+            private string consensus;
             private string name;
 
-            // Getters and setters
-            public string Id { get => id; set => id = value; }
+            // getters and setters
+            [JsonProperty("consensus")]
+            public string Consensus { get => consensus; set => consensus = value; }
+            [JsonProperty("name")]
             public string Name { get => name; set => name = value; }
         }
 
         // An internal class used to hold the Kmer node from the graph database
-        internal class Kmer
+        internal class K
         {
             // Private properties
-            private string id;
-            private string name;
+            private string sequence;
+            private List<string> offsetAt0;
+            private List<string> offsetAt1;
+            private List<string> offsetAt2;
 
             // Getters and setters
-            public string Id { get => id; set => id = value; }
-            public string Name { get => name; set => name = value; }
+            [JsonProperty("sequence")]
+            public string Sequence { get => sequence; set => sequence = value; }
+            [JsonProperty("offsetAt0")]
+            public List<string> OffsetAt0 { get => offsetAt0; set => offsetAt0 = value; }
+            [JsonProperty("offsetAt1")]
+            public List<string> OffsetAt1 { get => offsetAt1; set => offsetAt1 = value; }
+            [JsonProperty("offsetAt2")]
+            public List<string> OffsetAt2 { get => offsetAt2; set => offsetAt2 = value; }
         }
     }
 }

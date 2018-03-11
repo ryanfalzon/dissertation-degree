@@ -9,6 +9,8 @@ using System.IO;
 using Neo4j.Driver.V1;
 using ProbabilisticDataStructures;
 using System.Runtime.Serialization.Json;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace RegionExtractor
 {
@@ -32,7 +34,7 @@ namespace RegionExtractor
             Console.WriteLine("\nMAIN MENU");
             Console.WriteLine("---------\n");
             Console.WriteLine("1) Generate Regions");
-            Console.WriteLine("2) **JSON TESTS**");
+            Console.WriteLine("2) Classify Protein Sequence");
             Console.Write("\nEnter Choice or X to Exit: ");
             choice = Console.ReadLine();
             CheckInput(choice);
@@ -59,6 +61,7 @@ namespace RegionExtractor
                             ra = new RegionAnalyzer(data);
                             ra.Analyze();
                             data.Clear();
+                            Show();
                         }
                         else
                         {
@@ -72,23 +75,31 @@ namespace RegionExtractor
                     break;
 
                 case "2":
+                    Console.WriteLine("\nEnter Sequence You Would Like To Classify:");
+                    string newSequence = Console.ReadLine();
+                    Classifier classifier = new Classifier();
+                    classifier.Classify(newSequence);
+                    Show();
+                    break;
+
+
+                case "3":
                     List<string> funfam = new List<string>()
                     {
                         "AAA", "AAB", "AAC", "AAD", "AAE", "EAA", "DAA", "CAA", "BAA", "AAA"
                     };
-                    List<string> newSequence = new List<string>()
+                    List<string> newSequenceg = new List<string>()
                     {
                         "AAB", "BBC", "CCC", "AAC", "AAE", "BDD", "CBC", "CAA", "BAA", "AAA"
                     };
-                    KmerComparer comp = new KmerComparer(50);
-                    Console.WriteLine(comp.Compare(funfam, newSequence));
+                    
                     Console.ReadLine();
                     break;
 
-                case "3":
-                    GraphDatabaseConnection con = new GraphDatabaseConnection();
-                    con.FromGraph("1.10.10.60.FF123781");
-                    Console.ReadLine();
+                case "4":
+                    GraphDatabaseConnection con = new GraphDatabaseConnection("bolt://localhost", "neo4j", "fyp_ryanfalzon");
+                    con.Connect();
+                    con.FromGraph2("1.10.10.60.FF123781");
                     break;
 
                 case "X":

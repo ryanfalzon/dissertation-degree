@@ -48,7 +48,8 @@ namespace RegionExtractor
                 }
                 catch(Exception e)
                 {
-                    Console.Write("\nError Connecting To Database. Press Any key To Continue...");
+                    Console.WriteLine(e.Message);
+                    Console.Write("Press Any key To Continue...");
                     Console.ReadLine();
                     return false;
                 }
@@ -62,7 +63,8 @@ namespace RegionExtractor
                 }
                 catch(Exception e)
                 {
-                    Console.Write("\nError Connecting To Database. Press Any key To Continue...");
+                    Console.WriteLine(e.Message);
+                    Console.Write("Press Any key To Continue...");
                     Console.ReadLine();
                     return false;
                 }
@@ -74,41 +76,50 @@ namespace RegionExtractor
         {
             // Create a query
             MySqlCommand command = new MySqlCommand(("SELECT * FROM " + this.tableName + ";"), connection);
-            MySqlDataReader reader = command.ExecuteReader();
-
-            // Temp variables
-            List<DataRow> data = new List<DataRow>();
-            string tempHeader = "";
-            string tempSequence;
-            string tempRegion;
-            int tempX;
-            int tempY;
-
-            // Read the data
-            while (reader.Read())
+            try
             {
+                MySqlDataReader reader = command.ExecuteReader();
 
-                // Get sequence and check if it is null
-                tempSequence = reader["full_sequence"].ToString();
-                if (tempSequence != "")
+                // Temp variables
+                List<DataRow> data = new List<DataRow>();
+                string tempHeader = "";
+                string tempSequence;
+                string tempRegion;
+                int tempX;
+                int tempY;
+
+                // Read the data
+                while (reader.Read())
                 {
-                    tempHeader = tempSequence.Substring(0, (tempSequence.IndexOf("SV=") + 3));
-                    tempSequence = tempSequence.Substring(tempSequence.IndexOf("SV=") + 4);
-                    tempSequence = Regex.Replace(tempSequence, @"\t|\n|\r", "");
+
+                    // Get sequence and check if it is null
+                    tempSequence = reader["full_sequence"].ToString();
+                    if (tempSequence != "")
+                    {
+                        tempHeader = tempSequence.Substring(0, (tempSequence.IndexOf("SV=") + 3));
+                        tempSequence = tempSequence.Substring(tempSequence.IndexOf("SV=") + 4);
+                        tempSequence = Regex.Replace(tempSequence, @"\t|\n|\r", "");
+                    }
+
+                    // Get region and split it
+                    tempRegion = reader["region"].ToString();
+                    tempX = Convert.ToInt32(tempRegion.Split('-')[0]);
+                    tempY = Convert.ToInt32(tempRegion.Split('-')[1]);
+
+                    // Add data to the list
+                    data.Add(new DataRow(reader["protein_id"].ToString(), tempHeader, tempSequence, reader["functional_family"].ToString(), tempX, tempY));
                 }
 
-                // Get region and split it
-                tempRegion = reader["region"].ToString();
-                tempX = Convert.ToInt32(tempRegion.Split('-')[0]);
-                tempY = Convert.ToInt32(tempRegion.Split('-')[1]);
-
-                // Add data to the list
-                data.Add(new DataRow(reader["protein_id"].ToString(), tempHeader, tempSequence, reader["functional_family"].ToString(), tempX, tempY));
+                // Sort the list according to the functional family id
+                data = data.OrderBy(s => s.Functional_family).ToList();
+                return data;
             }
-
-            // Sort the list according to the functional family id
-            data = data.OrderBy(s => s.Functional_family).ToList();
-            return data;
+            catch(Exception e)
+            {
+                Console.Write(e.Message + "\nPress Any Key To Continue...");
+                Console.ReadLine();
+                return new List<DataRow>();
+            }
         }
     }
 }
