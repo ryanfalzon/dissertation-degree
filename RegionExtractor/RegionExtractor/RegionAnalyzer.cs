@@ -247,7 +247,7 @@ namespace RegionExtractor
         {
             // Some temporary variables
             SimpleConsensusResolver resolver = new SimpleConsensusResolver(Alphabets.Protein);
-            List<List<byte>> coloumns = new List<List<byte>>();
+            List<char> coloumn = new List<char>();
             string temp = "";
 
             //  Iterate through all the aligned sequences
@@ -255,24 +255,13 @@ namespace RegionExtractor
             {
                 for (int i = 0; i < msa[0].Length; i++)
                 {
-                    coloumns.Add(new List<byte>());
+                    coloumn.Clear();
                     for (int j = 0; j < msa.Count; j++)
                     {
-                        coloumns[i].Add((byte)msa[j][i]);
+                        coloumn.Add(msa[j][i]);
                     }
+                    temp += GetCharacter(coloumn);
                 }
-            }
-
-            // Get the thresholds
-            //resolver.Threshold = GetThreshold(coloumns);
-            List<int> thresholdColoumns = GetThreshold(coloumns);
-
-            // Get the consesnus for the coloumns
-            foreach (List<byte> coloumn in coloumns)
-            {
-                // Get the current consensus
-                resolver.Threshold = thresholdColoumns[coloumns.IndexOf(coloumn)];
-                temp += (char)(resolver.GetConsensus(coloumn.ToArray()));
             }
 
             // Return consensus
@@ -280,82 +269,39 @@ namespace RegionExtractor
         }
 
         // Method to analayze the passed data to get an optimum threshold
-        public List<int> GetThreshold(List<List<byte>> data)
+        public char GetCharacter(List<char> data)
         {
             // Some temporary variables
-            List<byte> bytes = new List<byte>();
-            List<int> byteCounter = new List<int>();
-            List<int> thresholdColoumns = new List<int>();
+            List<char> characters = new List<char>();
+            List<int> charCounter = new List<int>();
             int max = 0;
-            int temp = 0;
 
             //  Iterate through all the aligned sequences
-            foreach (List<byte> list in data)
+            foreach (char c in data)
             {
-                foreach (byte b in list)
+                // Check if byte is already in list
+                if (!characters.Contains(c))
                 {
-                    // Check if byte is already in list
-                    if (!bytes.Contains(b))
-                    {
-                        bytes.Add(b);
-                        byteCounter.Add(1);
-                    }
-                    else
-                    {
-                        byteCounter[bytes.IndexOf(b)] += 1;
-                    }
+                    characters.Add(c);
+                    charCounter.Add(1);
                 }
-
-                // Analyze the gathered data so far
-                foreach (int b in byteCounter)
+                else
                 {
-                    // Check if current value is greater than the maximum
-                    if (b > max)
-                    {
-                        max = b;
-                    }
+                    charCounter[characters.IndexOf(c)] += 1;
                 }
-
-                // Output Some Statistics
-                temp = Convert.ToInt32((Convert.ToDouble(max) / Convert.ToDouble(list.Count)) * 100);
-                //Console.WriteLine("Threshold For Current Coloumn: " + (char)bytes[byteCounter.IndexOf(max)] + " -> " + temp + "%");
-                thresholdColoumns.Add(temp);
-
-                // Reset variables
-                bytes.Clear();
-                byteCounter.Clear();
-                max = 0;
-                temp = 0;
             }
 
-            /*// Get the mean and median threshold
-            int thresholdMean = 0;
-            int thresholdMedian = 0;
-            foreach (int tc in thresholdColoumns)
+            // Analyze the gathered data so far
+            foreach (int b in charCounter)
             {
-                thresholdMean += tc;
+                // Check if current value is greater than the maximum
+                if (b > charCounter.ElementAt(max))
+                {
+                    max = charCounter.IndexOf(b);
+                }
             }
-            thresholdMean = thresholdMean / thresholdColoumns.Count();
-            thresholdMedian = Convert.ToInt32(GetMedian(thresholdColoumns));
-            Console.WriteLine("Threshold For MSA Using Mean: " + thresholdMean);
-            Console.WriteLine("Threshold For MSA Using Median: " + thresholdMedian);
-            return thresholdMedian;*/
 
-            // Return the threshold for each coloumn
-            return thresholdColoumns;
-        }
-
-        // Method to find the median value from the passed values
-        private double GetMedian(List<int> data)
-        {
-            int[] dataClone = data.ToArray();
-            Array.Sort(dataClone);
-
-            //get the median
-            int size = dataClone.Length;
-            int mid = size / 2;
-            double median = (size % 2 != 0) ? (double)dataClone[mid] : ((double)dataClone[mid] + (double)dataClone[mid - 1]) / 2;
-            return median;
+            return characters[max];
         }
 
         // Method to analyze the consensus sequence

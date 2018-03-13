@@ -102,6 +102,16 @@ namespace RegionExtractor
             client.Connect();
         }
 
+        // Method to reset the graph database
+        public void Reset()
+        {
+            client.Cypher
+                .Match("(n)")
+                .DetachDelete("n")
+                .ExecuteWithoutResults();
+            Console.WriteLine("\nGraph Successfully Reset!");
+        }
+
         // Method to retrieve all funfam nodes from the graph database
         public IEnumerable<F> FromGraph1()
         {

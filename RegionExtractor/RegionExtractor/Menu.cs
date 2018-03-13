@@ -35,6 +35,7 @@ namespace RegionExtractor
             Console.WriteLine("---------\n");
             Console.WriteLine("1) Generate Regions");
             Console.WriteLine("2) Classify Protein Sequence");
+            Console.WriteLine("3) Reset Graph Database");
             Console.Write("\nEnter Choice or X to Exit: ");
             choice = Console.ReadLine();
             CheckInput(choice);
@@ -50,7 +51,7 @@ namespace RegionExtractor
                 case "1":
 
                     // Initialize a database connection
-                    db = new DatabaseConnection();
+                    db = new DatabaseConnection("fyp_ryanfalzon", "test_data");
 
                     // Check if connection was successful
                     if (db.Connect(true))
@@ -61,16 +62,7 @@ namespace RegionExtractor
                             ra = new RegionAnalyzer(data);
                             ra.Analyze();
                             data.Clear();
-                            Show();
                         }
-                        else
-                        {
-                            Show();
-                        }
-                    }
-                    else
-                    {
-                        Show();
                     }
                     break;
 
@@ -79,27 +71,12 @@ namespace RegionExtractor
                     string newSequence = Console.ReadLine();
                     Classifier classifier = new Classifier();
                     classifier.Classify(newSequence);
-                    Show();
                     break;
-
 
                 case "3":
-                    List<string> funfam = new List<string>()
-                    {
-                        "AAA", "AAB", "AAC", "AAD", "AAE", "EAA", "DAA", "CAA", "BAA", "AAA"
-                    };
-                    List<string> newSequenceg = new List<string>()
-                    {
-                        "AAB", "BBC", "CCC", "AAC", "AAE", "BDD", "CBC", "CAA", "BAA", "AAA"
-                    };
-                    
-                    Console.ReadLine();
-                    break;
-
-                case "4":
-                    GraphDatabaseConnection con = new GraphDatabaseConnection("bolt://localhost", "neo4j", "fyp_ryanfalzon");
-                    con.Connect();
-                    con.FromGraph2("1.10.10.60.FF123781");
+                    GraphDatabaseConnection gdc = new GraphDatabaseConnection();
+                    gdc.Connect();
+                    gdc.Reset();
                     break;
 
                 case "X":
@@ -113,6 +90,9 @@ namespace RegionExtractor
                     Show();
                     break;
             }
+
+            // Show the menu again
+            Show();
         }
     }
 }
