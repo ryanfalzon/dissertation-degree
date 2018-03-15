@@ -67,10 +67,17 @@ namespace RegionExtractor
                     break;
 
                 case "2":
-                    Console.WriteLine("\nEnter Sequence You Would Like To Classify:");
-                    string newSequence = Console.ReadLine();
+                    Console.Write("\nEnter file name where new sequences are stored: ");
+                    string file = Console.ReadLine();
+                    string textfile = System.IO.File.ReadAllText(file);
+
+                    // Get individual sequences from the text file contents
+                    textfile = textfile.Replace(System.Environment.NewLine, "");
+                    List<string> newSequences = textfile.Split(';').ToList();
+
+                    // Classsify new sequences
                     Classifier classifier = new Classifier();
-                    classifier.Classify(newSequence);
+                    classifier.Classify(newSequences.ElementAt(0));
                     break;
 
                 case "3":

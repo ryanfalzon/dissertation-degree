@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Fastenshtein;
+using System.Diagnostics;
 
 namespace RegionExtractor
 {
@@ -30,6 +31,12 @@ namespace RegionExtractor
 
             // Initialize a graph database connection and get all the funfams for initial processing
             GraphDatabaseConnection graphDatabase = new GraphDatabaseConnection();
+
+            // Start stopwatch
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
+
+            // Connect to the database to start the evaluation
             graphDatabase.Connect();
             var result = graphDatabase.FromGraph1();
             foreach(var item in result)
@@ -49,7 +56,7 @@ namespace RegionExtractor
                 current = graphDatabase.FromGraph2(funfam);
                 temp = CompareKmers(current, GenerateKmers(this.newSequence, 3), 3);
 
-                // Check if answer is tru
+                // Check if answer is true
                 if (temp)
                 {
                     probabilistic.Add(current);
@@ -61,6 +68,11 @@ namespace RegionExtractor
                 }
                 Console.WriteLine();
             }
+
+            // Stop the stopwatch
+            watch.Stop();
+            Console.WriteLine("\nTotal Time For Evaluation: " + watch.Elapsed.TotalSeconds.ToString());
+            Console.Write("\nPress Any Key To Continue...");
             Console.ReadLine();
         }
 
@@ -140,27 +152,42 @@ namespace RegionExtractor
             
             // Temp variables
             int score = 0;
-            int counter = 0;
+            int counterNewSequence = 0;
+            int counterFunfam = 0;
+            int tempCounter = 0;
             int percentage;
 
             // Iterate the list until all the kmers of the new sequence have been visited
-            while (counter < newSequence.Count)
+            while (counterNewSequence < newSequence.Count)
             {
+                tempCounter = counterFunfam;
+
                 // Compare the current kmer of the new sequence with all the kmers the functional family has
-                foreach (Kmer kmer in funfam.Kmers)
+                while(counterFunfam < funfam.Kmers.Count)
                 {
                     // If they match, increase the score and move onto the next kmer in the new sequence
-                    if (newSequence[counter].Equals(kmer.K))
+                    if (newSequence[counterNewSequence].Equals(funfam.Kmers.ElementAt(counterFunfam).K))
                     {
+                        counterFunfam++;
                         score++;
                         break;
                     }
+                    else
+                    {
+                        counterFunfam++;
+
+                        if(counterFunfam == funfam.Kmers.Count)
+                        {
+                            counterFunfam = tempCounter;
+                            break;
+                        }
+                    }
                 }
-                counter++;
+                counterNewSequence++;
             }
 
             // Check if the percentage score exceeds the threshold set by the user
-            percentage = ((score * 100) / newSequence.Count);
+            percentage = ((score * 100) / funfam.Kmers.Count);
             Console.WriteLine("Percentage Score is " + percentage.ToString() + "%");
             if (percentage >= threshold)
             {

@@ -30,6 +30,10 @@ namespace RegionExtractor
             IList<Bio.Algorithms.Alignment.ISequenceAlignment> alignedRegions;      // Holds the MSA for the extracted regions
             List<string> msaTemp = new List<string>();                              // Temporarily holds the msa as a list of strings
             string consensus = "";                                                  // Holds the consensus sequence for the processed MSA
+            string conservedRegion = "";                                            // Holds the conserved region for the consensus seqeunce
+            int start = 0;                                                          // Holds the start index from the consensus sequence of the conserved region
+            int end = 0;                                                            // Holds the end index from the consensus sequence of the conserved region
+            bool whatToSearch = false;                                              // Determines what we are searching for - false(start) true(end)
             List<Kmer> kmers = new List<Kmer>();                                    // Holds all the kmers for the generated consensus sequence
             List<FunctionalFamily> funfams = new List<FunctionalFamily>();          // Holds all the data which will later be transfered to the graph database
             FunctionalFamily temp;                                                  // Temporarily holds the current functional family instance
@@ -81,15 +85,39 @@ namespace RegionExtractor
                     consensus = GetConsensus(msaTemp);
                     Console.WriteLine("Consensus Sequence");
                     Console.WriteLine("------------------");
-                    Console.WriteLine(consensus + "\n");
+                    Console.WriteLine(consensus);
                     alignedRegions.Clear();
+
+                    // Calculate the conserved region
+                    for(int i = 0; i < consensus.Count(); i++)
+                    {
+                        if (!whatToSearch)      // This means we are searching for the start index
+                        {
+                            if(!consensus.ElementAt(i).Equals('-'))
+                            {
+                                start = i;
+                                whatToSearch = true;
+                            }
+                        }   
+                        else
+                        {
+                            if (!consensus.ElementAt(i).Equals('-'))
+                            {
+                                end = i;
+                            }
+                        }
+                    }
+                    conservedRegion = consensus.Substring(start, ((end - start) + 1));
+                    Console.WriteLine("Conserved Region");
+                    Console.WriteLine("------------------");
+                    Console.WriteLine(conservedRegion + "\n");
                 }
                 else
                 {
                     consensus = regions[0].ToString();
                     Console.WriteLine("\nNo Need For Multiple Sequence Alignment or Consensus Resolver.\n");
                 }
-                temp.ConsensusSequence = consensus;
+                temp.ConsensusSequence = conservedRegion;
 
                 // Get the k-mers for the consensus sequence and store them in a functional family object
                 temp.Kmers.AddRange(GenerateKmers(consensus, 3, AnalyzeConsensus(consensus, msaTemp)));
@@ -101,6 +129,10 @@ namespace RegionExtractor
                 regions.Clear();
                 kmers.Clear();
                 msaTemp.Clear();
+                start = 0;
+                end = 0;
+                conservedRegion = "";
+                whatToSearch = false;
                 Console.WriteLine();
 
                 // Get the next functional family
@@ -348,29 +380,37 @@ namespace RegionExtractor
             // Some temp variables
             string temp;
             Kmer current;
+            List<string> conservedRegions = sequence.Split('-').ToList();
             List<Kmer> kmers = new List<Kmer>();
 
-            // Create the kmers
-            for(int i = 0; i <= (sequence.Count() - length); i++)
-            {
-                temp = sequence.Substring(i, length);
-                current = new Kmer(temp);
+            // Check the conserved regions
+            conservedRegions = conservedRegions.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+            conservedRegions = conservedRegions.Where(s => s.Count() >= 3).ToList();
 
-                // Check if the current kmer has any offsets
-                if (offsets.Count > 0)
+            // Create the kmers
+            foreach (string s in conservedRegions)
+            {
+                for (int i = 0; i <= (s.Count() - length); i++)
                 {
-                    for (int j = 0; j < temp.Count(); j++)
+                    temp = s.Substring(i, length);
+                    current = new Kmer(temp);
+
+                    // Check if the current kmer has any offsets
+                    if (offsets.Count > 0)
                     {
-                        if (temp[j] == 'X')
+                        for (int j = 0; j < temp.Count(); j++)
                         {
-                            foreach(Char c in offsets.ElementAt(i + j))
+                            if (temp[j] == 'X')
                             {
-                                current.Offsets.Add(new Offset(j, c));
+                                foreach (Char c in offsets.ElementAt(i + j))
+                                {
+                                    current.Offsets.Add(new Offset(j, c));
+                                }
                             }
                         }
                     }
+                    kmers.Add(current);
                 }
-                kmers.Add(current);
             }
 
             return kmers;

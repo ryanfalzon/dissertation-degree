@@ -109,6 +109,7 @@ namespace RegionExtractor
                 .Match("(n)")
                 .DetachDelete("n")
                 .ExecuteWithoutResults();
+
             Console.WriteLine("\nGraph Successfully Reset!");
         }
 
