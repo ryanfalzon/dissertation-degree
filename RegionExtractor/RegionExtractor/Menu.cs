@@ -49,42 +49,82 @@ namespace RegionExtractor
             switch (choice)
             {
                 case "1":
-
-                    // Initialize a database connection
-                    db = new DatabaseConnection("fyp_ryanfalzon", "test_data");
-
-                    // Check if connection was successful
-                    if (db.Connect(true))
                     {
-                        data = db.Query1();
-                        if (db.Connect(false))
+                        // Initialize a database connection
+                        db = new DatabaseConnection();
+
+                        // Check if connection was successful
+                        if (db.Connect(true))
                         {
-                            ra = new RegionAnalyzer(data);
-                            ra.Analyze();
-                            data.Clear();
+                            data = db.Query1();
+                            if (db.Connect(false))
+                            {
+                                ra = new RegionAnalyzer(data);
+                                ra.Analyze();
+                                data.Clear();
+                            }
                         }
+                        break;
                     }
-                    break;
 
                 case "2":
-                    Console.Write("\nEnter file name where new sequences are stored: ");
-                    string file = Console.ReadLine();
-                    string textfile = System.IO.File.ReadAllText(file);
+                    {
+                        Console.Write("\nEnter file name where new sequences are stored: ");
+                        string file = Console.ReadLine();
+                        Console.Write("Enter Threshold For Shortlisting Functional Families: ");
+                        string thresholdShortlist = Console.ReadLine();
+                        Console.Write("Enter Threshold For K-Mer Comparison Results: ");
+                        string thresholdKmerResults = Console.ReadLine();
 
-                    // Get individual sequences from the text file contents
-                    textfile = textfile.Replace(System.Environment.NewLine, "");
-                    List<string> newSequences = textfile.Split(';').ToList();
+                        // Get individual sequences from the text file contents
+                        string textfile = System.IO.File.ReadAllText(file);
+                        textfile = textfile.Replace(System.Environment.NewLine, "");
+                        List<string> newSequences = textfile.Split(';').ToList();
+                        newSequences = newSequences.Where(element => !string.IsNullOrEmpty(element)).ToList();
 
-                    // Classsify new sequences
-                    Classifier classifier = new Classifier();
-                    classifier.Classify(newSequences.ElementAt(0));
-                    break;
+                        // Classsify new sequences
+                        List<ComparisonResult> results = new List<ComparisonResult>();
+                        Classifier classifier = new Classifier();
+                        foreach (string newSequence in newSequences)
+                        {
+                            results.Add(classifier.Classify(newSequence, Convert.ToInt32(thresholdShortlist), Convert.ToInt32(thresholdKmerResults)));
+                        }
+
+                        // Ask the user if he wishes to save the results in a text file
+                        Console.Write("\nWould You Like To Save Your Results? Y/N: ");
+                        string store = Console.ReadLine();
+                        if (store.Equals("Y"))
+                        {
+                            Console.Write("Enter A Name For The Destination File: ");
+                            string resultsFile = Console.ReadLine();
+                            StringBuilder sb = new StringBuilder();
+                            foreach (ComparisonResult result in results)
+                            {
+                                sb.AppendLine(result.ToString());
+                            }
+
+                            // Check if file already exists
+                            if (System.IO.File.Exists(resultsFile))
+                            {
+                                // Delete the file
+                                Console.WriteLine("File Already Exists. Removing Current Contents...");
+                                System.IO.File.Delete(resultsFile);
+                            }
+                            System.IO.File.WriteAllText(resultsFile, sb.ToString());
+                        }
+
+                        Console.Write("Process Completed. Press Any Key To Continue...");
+                        Console.ReadLine();
+                        break;
+                    }
 
                 case "3":
-                    GraphDatabaseConnection gdc = new GraphDatabaseConnection();
-                    gdc.Connect();
-                    gdc.Reset();
-                    break;
+                    {
+                        GraphDatabaseConnection gdc = new GraphDatabaseConnection();
+                        gdc.Connect();
+                        gdc.Reset();
+                        break;
+                    }
 
                 case "X":
                     System.Environment.Exit(1);

@@ -11,55 +11,66 @@ namespace RegionExtractor
     class Classifier
     {
         // Private properties
+        GraphDatabaseConnection graphDatabase;
         private List<FunctionalFamily> funfams;
-        private string newSequence;
 
         // Geters and setters
         internal List<FunctionalFamily> Funfams { get => funfams; set => funfams = value; }
-        public string NewSequence { get => newSequence; set => newSequence = value; }
 
         // Constructor
         public Classifier()
         {
             this.funfams = new List<FunctionalFamily>();
+            
+            // Initialize a database connection
+            graphDatabase = new GraphDatabaseConnection();
+            graphDatabase.Connect();
+
+            // Get a list of all functional families and their consensus seqeunce
+            var result = graphDatabase.FromGraph1();
+            foreach (var item in result)
+            {
+                this.funfams.Add(new FunctionalFamily(item.Name, item.Consensus));
+            }
         }
 
         // A method to classify a new sequence
-        public void Classify(string newSequence)
+        public ComparisonResult Classify(string newSequence, int threshold1, int threshold2)
         {
-            this.newSequence = newSequence;
-
-            // Initialize a graph database connection and get all the funfams for initial processing
-            GraphDatabaseConnection graphDatabase = new GraphDatabaseConnection();
-
+            ComparisonResult compResult = new ComparisonResult(newSequence);
+            
             // Start stopwatch
             Stopwatch watch = new Stopwatch();
             watch.Start();
 
-            // Connect to the database to start the evaluation
-            graphDatabase.Connect();
-            var result = graphDatabase.FromGraph1();
-            foreach(var item in result)
-            {
-                this.funfams.Add(new FunctionalFamily(item.Name, item.Consensus));
-            }
-
-            // Calculate the LevenshteinDistance
-            List<string> furtherAnalysis = LevenshteinDistance(1);
+            /*  Step 1 - Calculate the Levenshtein Distance for each functional family's consensus
+                seqeunce to shortlist the long list of functional familiex to a smaller one. These
+                shortlisted fdunctional families will then proceed for further analysis */
+            List<string> furtherAnalysis = LevenshteinDistance(newSequence, threshold1);
 
             // Compare the kmers for the functional families that require further analyzing
             FunctionalFamily current;
-            List<FunctionalFamily> probabilistic = new List<FunctionalFamily>();
-            bool temp;
+            FunFamResult funfamResult;
             foreach(string funfam in furtherAnalysis)
             {
-                current = graphDatabase.FromGraph2(funfam);
-                temp = CompareKmers(current, GenerateKmers(this.newSequence, 3), 3);
+
+                // Check if the current funfam is already stored locally
+                current = funfams.Where(ff => ff.Funfam.Equals(funfam)).ElementAt(0);
+                if(current.Kmers.Count == 0)
+                {
+                    int index = funfams.IndexOf(current);
+                    current = graphDatabase.FromGraph2(funfam);     // Get the functional family kmers from the graph database
+                    funfams.ElementAt(index).Kmers = current.Kmers;
+                }
+                
+                funfamResult = CompareKmers(current, GenerateKmers(newSequence, 3), threshold2);
 
                 // Check if answer is true
-                if (temp)
+                if (funfamResult != null)
                 {
-                    probabilistic.Add(current);
+                    funfamResult.RegionX = 0;
+                    funfamResult.RegionY = 0;
+                    compResult.Results.Add(funfamResult);
                     Console.WriteLine("New sequence is probably in this functional family.");
                 }
                 else
@@ -71,13 +82,16 @@ namespace RegionExtractor
 
             // Stop the stopwatch
             watch.Stop();
-            Console.WriteLine("\nTotal Time For Evaluation: " + watch.Elapsed.TotalSeconds.ToString());
-            Console.Write("\nPress Any Key To Continue...");
-            Console.ReadLine();
+            Console.WriteLine("Total Time For Evaluation: " + watch.Elapsed.TotalSeconds.ToString());
+            Console.WriteLine("--------------------------------------------------------------------------------------------------------\n\n");
+
+            // Return the result for this comparison
+            compResult.TotalTime = watch.Elapsed.TotalSeconds.ToString();
+            return compResult;
         }
 
         // A method that will take a list of strings and a new string and will give the Levenshtein Distance for the strings
-        private List<string> LevenshteinDistance(int threshold)
+        private List<string> LevenshteinDistance(string newSequence, int threshold)
         {
             // Temp variables
             Levenshtein lev;                                        // Tool used to calculate the Levenshtein for the passed new sequences
@@ -89,13 +103,13 @@ namespace RegionExtractor
             // Calculate the Levenshtein Distance
             foreach(FunctionalFamily funfam in this.funfams)
             {
-                Console.WriteLine("Current Functional Family being Analyzed:\nName: " + funfam.Funfam + "\nConsensus Sequence: " + funfam.ConsensusSequence + "\n");
+                Console.WriteLine("Current Functional Family being Analyzed:\nName: " + funfam.Funfam + "\nConsensus Sequence: " + funfam.ConservedSequence + "\n");
 
                 // Initialize the Levenshtein function
-                lev = new Levenshtein(funfam.ConsensusSequence);
+                lev = new Levenshtein(funfam.ConservedSequence);
 
                 // Get the kmers and calculate the Levenshtein distance
-                kmers = GenerateKmers(this.newSequence, funfam.ConsensusSequence.Count());
+                kmers = GenerateKmers(newSequence, funfam.ConservedSequence.Count());
                 Console.WriteLine("Evaluating new sequences' kmers with the consensus sequence of current funfam...");
                 foreach(string kmer in kmers)
                 {
@@ -146,12 +160,12 @@ namespace RegionExtractor
         }
 
         // A method that will compare a list of kmers with another
-        private bool CompareKmers(FunctionalFamily funfam, List<string> newSequence, int threshold)
+        private FunFamResult CompareKmers(FunctionalFamily funfam, List<string> newSequence, int threshold)
         {
             Console.WriteLine("Further Analysis of FunctionalFamily: " + funfam.Funfam);
             
             // Temp variables
-            int score = 0;
+            double score = 0;
             int counterNewSequence = 0;
             int counterFunfam = 0;
             int tempCounter = 0;
@@ -174,28 +188,55 @@ namespace RegionExtractor
                     }
                     else
                     {
-                        counterFunfam++;
-
-                        if(counterFunfam == funfam.Kmers.Count)
+                        /*// Iterate through the current kmers to calculate a subscore
+                        int subScore = 0;
+                        for (int i = 0; i < newSequence[counterNewSequence].Count(); i++)
                         {
-                            counterFunfam = tempCounter;
-                            break;
+                            if (newSequence[counterNewSequence].ElementAt(i).Equals(funfam.Kmers.ElementAt(counterFunfam).K.ElementAt(i)))
+                            {
+                                subScore++;
+                            }
+
+                            // If 2 characters are already wrong process can break
+                            if((score == 0) && (i == newSequence[counterNewSequence].Count() - 2))
+                            {
+                                break;
+                            }
                         }
+
+                        // If score is greater than 1, then allocate a portion fo the score
+                        if (subScore > 1)
+                        {
+                            counterFunfam++;
+                            score += 2 / 3;
+                        }
+                        else
+                        {*/
+                            counterFunfam++;
+
+                            if (counterFunfam == funfam.Kmers.Count)
+                            {
+                                counterFunfam = tempCounter;
+                                break;
+                            }
+                        //}
                     }
                 }
                 counterNewSequence++;
             }
 
             // Check if the percentage score exceeds the threshold set by the user
-            percentage = ((score * 100) / funfam.Kmers.Count);
+            percentage = Convert.ToInt32(((score * 100) / funfam.Kmers.Count));
+            Console.WriteLine(score);
+            Console.WriteLine(funfam.Kmers.Count);
             Console.WriteLine("Percentage Score is " + percentage.ToString() + "%");
             if (percentage >= threshold)
             {
-                return true;    // This means that the new sequence is part of the functional family
+                return new FunFamResult(funfam.Funfam, percentage);    // This means that the new sequence is part of the functional family
             }
             else
             {
-                return false;   // This means that the new sequence is not part of the functional family
+                return null;    // This means that the new sequence is not part of the functional family
             }
         }
     }

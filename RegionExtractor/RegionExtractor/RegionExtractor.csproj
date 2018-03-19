@@ -69,7 +69,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Classifier.cs" />
+    <Compile Include="ComparisonResult.cs" />
     <Compile Include="DatabaseConnection.cs" />
+    <Compile Include="FunFamResult.cs" />
     <Compile Include="GraphDatabaseConnection.cs" />
     <Compile Include="Kmer.cs" />
     <Compile Include="Menu.cs" />

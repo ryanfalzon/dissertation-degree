@@ -49,7 +49,7 @@ namespace RegionExtractor
 
             // Temp variables
             int temp;
-            string query = "CREATE (f:FunFam {name:\"" + funfam.Funfam + "\", consensus:\"" + funfam.ConsensusSequence + "\"}) - [:HAS] -> ";
+            string query = "CREATE (f:FunFam {name:\"" + funfam.Funfam + "\", consensus:\"" + funfam.ConservedSequence + "\"}) - [:HAS] -> ";
 
             // Add the kmers to the query
             for (int i = 0; i < funfam.Kmers.Count; i++)

@@ -2,6 +2,7 @@
 using Bio.Algorithms.Alignment.MultipleSequenceAlignment;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace RegionExtractor
 
             // Some temporary variables
             List<DataRow> currentFunFam = GetNextFunFam();                          // Holds all the rows for the current functional family
+            string currentRegion = "";                                              // Holds the current region in a string
             List<Sequence> regions = new List<Sequence>();                          // Holds the regions extracted from the sequences of the current functional family
             List<int> lengths = new List<int>();                                    // Holds the lengths of the regions extracted from each sequence
             IList<Bio.Algorithms.Alignment.ISequenceAlignment> alignedRegions;      // Holds the MSA for the extracted regions
@@ -40,6 +42,10 @@ namespace RegionExtractor
 
             // PAMSAM Aligner from the DotNet Core library
             PAMSAMMultipleSequenceAligner aligner = new PAMSAMMultipleSequenceAligner();
+
+            // Start stopwatch
+            Stopwatch watch = new Stopwatch();
+            watch.Start();
 
             // Iterate while their are more functional families to process
             while (currentFunFam.Count > 0)
@@ -57,13 +63,37 @@ namespace RegionExtractor
                     // Check if sequence is not null
                     if (s.Full_sequence != "")
                     {
-                        regions.Add(new Sequence(Alphabets.Protein, s.Full_sequence.Substring((s.RegionX - 1), s.GetLength())));
-                        lengths.Add(s.GetLength());
-                        Console.Write(s.Full_sequence.Substring((s.RegionX - 1), s.GetLength()));
+                        try
+                        {
+                            currentRegion = s.Full_sequence.Substring((s.RegionX - 1), s.GetLength());
+
+                            // Check if region is greater than the kmer length
+                            if (currentRegion.Count() >= 3)
+                            {
+                                try
+                                {
+                                    regions.Add(new Sequence(Alphabets.Protein, currentRegion));
+                                    lengths.Add(s.GetLength());
+                                    Console.Write(s.Full_sequence.Substring((s.RegionX - 1), s.GetLength()));
+                                }
+                                catch(Exception e)
+                                {
+                                    Console.Write("Region Contains An Illegal Protein Alphabet Character.");
+                                }
+                            }
+                            else
+                            {
+                                Console.Write("Region Is Smaller Than K-Mer Length.");
+                            }
+                        }
+                        catch(Exception e)
+                        {
+                            Console.Write("Region Is Not Within Current Sequence Length.");
+                        }
                     }
                     else
                     {
-                        Console.Write("No sequence for this protein!");
+                        Console.Write("No Sequence Found For This Protein.");
                     }
                     Console.WriteLine();
                 }
@@ -72,56 +102,84 @@ namespace RegionExtractor
                 CalculateStatistics(lengths);
 
                 // Check if functional family has more than one sequence
-                if (regions.Count > 1)
+                if (regions.Count >= 1)
                 {
                     // Calculate the multiple sequence alignment for the extracted regions
-                    alignedRegions = aligner.Align(regions);
-                    msaTemp = AnalyzeMSA(alignedRegions[0].ToString());
-                    Console.WriteLine("\nMultiple Sequence Alignment");
-                    Console.WriteLine("---------------------------");
-                    Console.WriteLine(alignedRegions[0]);
-
-                    // Calculate the consensus sequence
-                    consensus = GetConsensus(msaTemp);
-                    Console.WriteLine("Consensus Sequence");
-                    Console.WriteLine("------------------");
-                    Console.WriteLine(consensus);
-                    alignedRegions.Clear();
-
-                    // Calculate the conserved region
-                    for(int i = 0; i < consensus.Count(); i++)
+                    try
                     {
-                        if (!whatToSearch)      // This means we are searching for the start index
+                        if (regions.Count > 1)
                         {
-                            if(!consensus.ElementAt(i).Equals('-'))
+                            alignedRegions = aligner.Align(regions);
+                            msaTemp = SplitMSA(alignedRegions[0].ToString());
+                            Console.WriteLine("\nMultiple Sequence Alignment");
+                            Console.WriteLine("---------------------------");
+                            Console.WriteLine(alignedRegions[0]);
+
+                            // Calculate the consensus sequence
+                            consensus = GetConsensus(msaTemp);
+                            Console.WriteLine("Consensus Sequence");
+                            Console.WriteLine("------------------");
+                            Console.WriteLine(consensus);
+                            alignedRegions.Clear();
+
+                            // Calculate the conserved region if the consensus has gaps
+                            if (!consensus.ElementAt(0).Equals("-") && !consensus.ElementAt(consensus.Count() - 1).Equals("-"))
                             {
-                                start = i;
-                                whatToSearch = true;
+                                for (int i = 0; i < consensus.Count(); i++)
+                                {
+                                    if (!whatToSearch)      // This means we are searching for the start index
+                                    {
+                                        if (!consensus.ElementAt(i).Equals('-'))
+                                        {
+                                            start = i;
+                                            i--;
+                                            whatToSearch = true;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        if (!consensus.ElementAt(i).Equals('-'))
+                                        {
+                                            end = i;
+                                        }
+                                    }
+                                }
+
+                                conservedRegion = consensus.Substring(start, ((end - start) + 1));
+                                Console.WriteLine("Conserved Region");
+                                Console.WriteLine("------------------");
+                                Console.WriteLine(conservedRegion + "\n");
                             }
-                        }   
-                        else
-                        {
-                            if (!consensus.ElementAt(i).Equals('-'))
+                            else
                             {
-                                end = i;
+                                Console.WriteLine("No Need For Conserved Region Calculation Since Consensus Sequence Has No Gaps.\n");
+                                conservedRegion = consensus;
+                                /* IN THIS INSTANCE, CONSERVED REGION IS THE CONSENSUS SEQUENCE */
                             }
                         }
+                        else
+                        {
+                            consensus = regions[0].ToString();
+                            Console.WriteLine("\nNo Need For Multiple Sequence Alignment or Consensus Resolver.\n");
+                            /* IN THIS INSTANCE, CONSENSUS SEQUENCE OR CONSERVED REGION ARE THE FIRST REGION IN THE LIST */
+                        }
+
+                        // Store the conserved region in the functional family
+                        temp.ConservedSequence = conservedRegion;
+
+                        // Get the k-mers for the consensus sequence and store them in a functional family object
+                        temp.Kmers.AddRange(GenerateKmers(consensus, 3));
+                        funfams.Add(temp);
                     }
-                    conservedRegion = consensus.Substring(start, ((end - start) + 1));
-                    Console.WriteLine("Conserved Region");
-                    Console.WriteLine("------------------");
-                    Console.WriteLine(conservedRegion + "\n");
+                    catch(Exception e)
+                    {
+                        Console.WriteLine("\nError While Computing Multiple Sequence Alignment.\n" + e.Message);
+                    }
                 }
                 else
                 {
-                    consensus = regions[0].ToString();
-                    Console.WriteLine("\nNo Need For Multiple Sequence Alignment or Consensus Resolver.\n");
+                    Console.WriteLine("Current Functional Family Has No Sequences.");
                 }
-                temp.ConsensusSequence = conservedRegion;
-
-                // Get the k-mers for the consensus sequence and store them in a functional family object
-                temp.Kmers.AddRange(GenerateKmers(consensus, 3, AnalyzeConsensus(consensus, msaTemp)));
-                funfams.Add(temp);
 
                 // Reset temp variables
                 lengths.Clear();
@@ -138,6 +196,10 @@ namespace RegionExtractor
                 // Get the next functional family
                 currentFunFam = GetNextFunFam();
             }
+
+            // Stop the stopwatch
+            watch.Stop();
+            Console.WriteLine($"\nTotal Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString()} minutes");
 
             // Check whether the user wishes to save the generated data in the graph database
             if (funfams.Count > 0)
@@ -188,63 +250,75 @@ namespace RegionExtractor
         // Calculate the statistics for the passed lengths
         private void CalculateStatistics(List<int> lengths)
         {
-            int max = 0;
-            int min = 100;
-            double average = 0;
-            double median = 0;
-            double variance = 0;
-            double standardDeviation = 0;
-
-            // Iterate through all the lengths in the list to calculate max, min and average values for length
-            foreach (int length in lengths)
+            // Check if the lists that holds the lengths is greater than 1
+            if (lengths.Count > 0)
             {
-                // Check if current length is the longest
-                if (length >= max)
+                // Statistical variables
+                int max = 0;
+                int min = 100;
+                double average = 0;
+                double median = 0;
+                double variance = 0;
+                double standardDeviation = 0;
+
+                // Iterate through all the lengths in the list to calculate max, min and average values for length
+                foreach (int length in lengths)
                 {
-                    max = length;
+                    // Check if current length is the longest
+                    if (length >= max)
+                    {
+                        max = length;
+                    }
+                    // Check if current length is the smallest
+                    else if (length < min)
+                    {
+                        min = length;
+                    }
+
+                    // Add the length for the average
+                    average += length;
                 }
-                // Check if current length is the smallest
-                else if (length < min)
+                average = average / lengths.Count;
+
+                // Calculate the standard deviation
+                foreach (int length in lengths)
                 {
-                    min = length;
+                    variance += Math.Pow((length - average), 2);
                 }
+                standardDeviation = Math.Sqrt(variance);
 
-                // Add the length for the average
-                average += length;
-            }
-            average = average / lengths.Count;
+                // Output statistics
+                Console.WriteLine("\n\nStatistics");
+                Console.WriteLine("----------");
+                Console.Write("\nMaximum Length = " + max + "\nMinimum Length = " + min + "\nAverage Length = " + average + "\nMedian Length = ");
 
-            // Calculate the standard deviation
-            foreach (int length in lengths)
-            {
-                variance += Math.Pow((length - average), 2);
+                // Check if length of lengths is even
+                if ((lengths.Count % 2) == 0)
+                {
+                    median = (lengths.ElementAt(Convert.ToInt32(Math.Floor(Convert.ToDouble(lengths.Count / 2)))) + lengths.ElementAt(Convert.ToInt32(Math.Ceiling(Convert.ToDouble(lengths.Count / 2))))) / 2;
+                }
+                else
+                {
+                    median = lengths.ElementAt(lengths.Count / 2);
+                }
+                Console.Write(median + "\nVariance = " + variance + "\nStandard Devaition = " + standardDeviation + "\n\n");
             }
-            standardDeviation = Math.Sqrt(variance);
-
-            // Output statistics
-            Console.WriteLine("\n\nStatistics");
-            Console.WriteLine("----------");
-            Console.Write("\nMaximum Length = " + max + "\nMinimum Length = " + min + "\nAverage Length = " + average + "\nMedian Length = ");
-
-            // Check if length of lengths is even
-            if ((lengths.Count % 2) == 0)
-            {
-                median = (lengths.ElementAt(Convert.ToInt32(Math.Floor(Convert.ToDouble(lengths.Count / 2)))) + lengths.ElementAt(Convert.ToInt32(Math.Ceiling(Convert.ToDouble(lengths.Count / 2))))) / 2;
-            }
-            else
-            {
-                median = lengths.ElementAt(lengths.Count / 2);
-            }
-            Console.Write(median + "\nVariance = " + variance + "\nStandard Devaition = " + standardDeviation + "\n\n");
         }
 
-        // Method to analyze the multiple sequence alignment produced
-        private List<string> AnalyzeMSA(string msa)
+        // Method to split the sequences in the MSA into seperate strings and store them in a list
+        private List<string> SplitMSA(string msa)
         {
             // Some temporary variables
             List<string> seperatedRegions = new List<string>();
             string temp = "";
             int counter = 0;
+
+            // Check if the MSA requires complex splitting
+            if (!msa.Contains('.'))
+            {
+                seperatedRegions = msa.Split(Environment.NewLine.ToCharArray()).ToList();
+                return seperatedRegions;
+            }
 
             // Iterate through all the string
             while (counter < msa.Length)
@@ -281,6 +355,10 @@ namespace RegionExtractor
             SimpleConsensusResolver resolver = new SimpleConsensusResolver(Alphabets.Protein);
             List<char> coloumn = new List<char>();
             string temp = "";
+            
+            // Remove sequences that are composed of only '-' gap characters
+            msa.RemoveAll(sequence => sequence.All(Char.IsPunctuation));
+            
 
             //  Iterate through all the aligned sequences
             if (msa.Count > 1)
@@ -295,12 +373,16 @@ namespace RegionExtractor
                     temp += GetCharacter(coloumn);
                 }
             }
+            else if(msa.Count == 1)
+            {
+                return msa.ElementAt(0);
+            }
 
             // Return consensus
             return temp;
         }
 
-        // Method to analayze the passed data to get an optimum threshold
+        // Method to analayze the passed data to get the most frequent character
         public char GetCharacter(List<char> data)
         {
             // Some temporary variables
@@ -327,7 +409,9 @@ namespace RegionExtractor
             foreach (int b in charCounter)
             {
                 // Check if current value is greater than the maximum
-                if (b > charCounter.ElementAt(max))
+                if ((b > charCounter.ElementAt(max)) || 
+                    ((b == charCounter.ElementAt(max)) && 
+                    (characters.ElementAt(charCounter.IndexOf(b)).Equals('-'))))
                 {
                     max = charCounter.IndexOf(b);
                 }
@@ -336,46 +420,8 @@ namespace RegionExtractor
             return characters[max];
         }
 
-        // Method to analyze the consensus sequence
-        private List<List<char>> AnalyzeConsensus(string consensus, List<string> msa)
-        {
-            // Some temp variables
-            List<char> temp = new List<char>();
-            List<List<char>> offsets = new List<List<char>>();
-
-            // Iterate each letter in the consensus sequence
-            if (msa.Count > 0)
-            {
-                for (int i = 0; i < consensus.Length; i++)
-                {
-                    // Check if c is an ofset
-                    if (consensus[i] == 'X')
-                    {
-                        // Iterate the current coloumn within the MSA
-                        for (int j = 0; j < msa.Count; j++)
-                        {
-                            // Check if we have already seen current character
-                            if (!temp.Contains(msa.ElementAt(j)[i]))
-                            {
-                                temp.Add(msa.ElementAt(j)[i]);
-                            }
-                        }
-
-                        // Add the current temp list to the final list and clear the temp list
-                        offsets.Add(temp);
-                        temp = new List<char>();
-                    }
-                    else
-                    {
-                        offsets.Add(new List<char>());
-                    }
-                }
-            }
-            return offsets;
-        }
-
-        // A recursive method to output all the possible kmers of a particular size - RECURSIVE METHOD
-        private List<Kmer> GenerateKmers(string sequence, int length, List<List<char>> offsets)
+        // A recursive method to output all the possible kmers of a particular size
+        private List<Kmer> GenerateKmers(string sequence, int length)
         {
             // Some temp variables
             string temp;
@@ -394,21 +440,6 @@ namespace RegionExtractor
                 {
                     temp = s.Substring(i, length);
                     current = new Kmer(temp);
-
-                    // Check if the current kmer has any offsets
-                    if (offsets.Count > 0)
-                    {
-                        for (int j = 0; j < temp.Count(); j++)
-                        {
-                            if (temp[j] == 'X')
-                            {
-                                foreach (Char c in offsets.ElementAt(i + j))
-                                {
-                                    current.Offsets.Add(new Offset(j, c));
-                                }
-                            }
-                        }
-                    }
                     kmers.Add(current);
                 }
             }
