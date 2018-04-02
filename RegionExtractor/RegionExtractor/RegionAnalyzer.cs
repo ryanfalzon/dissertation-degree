@@ -33,12 +33,10 @@ namespace RegionExtractor
             List<string> msaTemp = new List<string>();                              // Temporarily holds the msa as a list of strings
             string consensus = "";                                                  // Holds the consensus sequence for the processed MSA
             string conservedRegion = "";                                            // Holds the conserved region for the consensus seqeunce
-            int start = 0;                                                          // Holds the start index from the consensus sequence of the conserved region
-            int end = 0;                                                            // Holds the end index from the consensus sequence of the conserved region
-            bool whatToSearch = false;                                              // Determines what we are searching for - false(start) true(end)
             List<Kmer> kmers = new List<Kmer>();                                    // Holds all the kmers for the generated consensus sequence
             List<FunctionalFamily> funfams = new List<FunctionalFamily>();          // Holds all the data which will later be transfered to the graph database
             FunctionalFamily temp;                                                  // Temporarily holds the current functional family instance
+            StringBuilder errorLog = new StringBuilder();                           // A string builder which will hold all error that are encountered
 
             // PAMSAM Aligner from the DotNet Core library
             PAMSAMMultipleSequenceAligner aligner = new PAMSAMMultipleSequenceAligner();
@@ -50,9 +48,11 @@ namespace RegionExtractor
             // Iterate while their are more functional families to process
             while (currentFunFam.Count > 0)
             {
+
                 // Output headings for table
                 Console.WriteLine("\nProtein ID\t\t\t\t|\tFunctional Family\t\t|\tRegion");
                 Console.WriteLine("----------\t\t\t\t\t-----------------\t\t\t------");
+                errorLog.AppendLine("Type, Details, Information");
                 temp = new FunctionalFamily(currentFunFam[0].Functional_family);
 
                 // Process current sequences
@@ -70,30 +70,35 @@ namespace RegionExtractor
                             // Check if region is greater than the kmer length
                             if (currentRegion.Count() >= 3)
                             {
+                                // Try and store the sequence in an instance
                                 try
                                 {
                                     regions.Add(new Sequence(Alphabets.Protein, currentRegion));
                                     lengths.Add(s.GetLength());
-                                    Console.Write(s.Full_sequence.Substring((s.RegionX - 1), s.GetLength()));
+                                    Console.Write(currentRegion);
                                 }
                                 catch(Exception e)
                                 {
                                     Console.Write("Region Contains An Illegal Protein Alphabet Character.");
+                                    errorLog.AppendLine($"1, Illegal Protein Alphabet Character, Sequence ID - {s.Protein_id}");
                                 }
                             }
                             else
                             {
                                 Console.Write("Region Is Smaller Than K-Mer Length.");
+                                errorLog.AppendLine($"2, Region Is Smaller Than Required, Functional Family - {currentFunFam[0].Functional_family} & Sequence ID - {s.Protein_id}");
                             }
                         }
                         catch(Exception e)
                         {
                             Console.Write("Region Is Not Within Current Sequence Length.");
+                            errorLog.AppendLine($"3, Region Specified Is Beyond Sequence Length, Functional Family - {currentFunFam[0].Functional_family} & Sequence ID - {s.Protein_id}");
                         }
                     }
                     else
                     {
                         Console.Write("No Sequence Found For This Protein.");
+                        errorLog.AppendLine($"4, No Sequence Found For This Protein, Sequence ID - {s.Protein_id}");
                     }
                     Console.WriteLine();
                 }
@@ -102,9 +107,10 @@ namespace RegionExtractor
                 CalculateStatistics(lengths);
 
                 // Check if functional family has more than one sequence
-                if (regions.Count >= 1)
+                if (regions.Count != 0)
                 {
-                    // Calculate the multiple sequence alignment for the extracted regions
+
+                    // Try and calculate the multiple sequence alignment for the extracted regions
                     try
                     {
                         if (regions.Count > 1)
@@ -114,71 +120,71 @@ namespace RegionExtractor
                             Console.WriteLine("\nMultiple Sequence Alignment");
                             Console.WriteLine("---------------------------");
                             Console.WriteLine(alignedRegions[0]);
-
-                            // Calculate the consensus sequence
-                            consensus = GetConsensus(msaTemp);
-                            Console.WriteLine("Consensus Sequence");
-                            Console.WriteLine("------------------");
-                            Console.WriteLine(consensus);
                             alignedRegions.Clear();
-
-                            // Calculate the conserved region if the consensus has gaps
-                            if (!consensus.ElementAt(0).Equals("-") && !consensus.ElementAt(consensus.Count() - 1).Equals("-"))
-                            {
-                                for (int i = 0; i < consensus.Count(); i++)
-                                {
-                                    if (!whatToSearch)      // This means we are searching for the start index
-                                    {
-                                        if (!consensus.ElementAt(i).Equals('-'))
-                                        {
-                                            start = i;
-                                            i--;
-                                            whatToSearch = true;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (!consensus.ElementAt(i).Equals('-'))
-                                        {
-                                            end = i;
-                                        }
-                                    }
-                                }
-
-                                conservedRegion = consensus.Substring(start, ((end - start) + 1));
-                                Console.WriteLine("Conserved Region");
-                                Console.WriteLine("------------------");
-                                Console.WriteLine(conservedRegion + "\n");
-                            }
-                            else
-                            {
-                                Console.WriteLine("No Need For Conserved Region Calculation Since Consensus Sequence Has No Gaps.\n");
-                                conservedRegion = consensus;
-                                /* IN THIS INSTANCE, CONSERVED REGION IS THE CONSENSUS SEQUENCE */
-                            }
                         }
                         else
                         {
-                            consensus = regions[0].ToString();
-                            Console.WriteLine("\nNo Need For Multiple Sequence Alignment or Consensus Resolver.\n");
-                            /* IN THIS INSTANCE, CONSENSUS SEQUENCE OR CONSERVED REGION ARE THE FIRST REGION IN THE LIST */
+                            Console.WriteLine("No Need For Multiple Sequence Alignment Since Only One Sequence Is Present.");
+                            msaTemp = SplitMSA(currentRegion + "\n");
                         }
-
-                        // Store the conserved region in the functional family
-                        temp.ConservedSequence = conservedRegion;
-
-                        // Get the k-mers for the consensus sequence and store them in a functional family object
-                        temp.Kmers.AddRange(GenerateKmers(consensus, 3));
-                        funfams.Add(temp);
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Console.WriteLine("\nError While Computing Multiple Sequence Alignment.\n" + e.Message);
+                        errorLog.AppendLine($"5, Error While Computing Multiple Sequence Alignment, Functional Family - {currentFunFam[0].Functional_family}");
                     }
+
+                    // Try and calculate the consensus sequence for the generated MSA
+                    try
+                    {
+                        consensus = GetConsensus(msaTemp);
+                        Console.WriteLine("Consensus Sequence");
+                        Console.WriteLine("------------------");
+                        Console.WriteLine(consensus);
+
+                        // Store the consensus sequence in the functional family
+                        temp.ConsensusSequence = consensus;
+
+                        // Try and calculate the conserved region if the consensus has gaps
+                        try
+                        {
+                            conservedRegion = GetConserved(consensus);
+                            Console.WriteLine("Conserved Region");
+                            Console.WriteLine("----------------");
+                            Console.WriteLine(conservedRegion + "\n");
+
+                            // Store the conserved region in the functional family
+                            temp.ConservedRegion = conservedRegion;
+
+                            // Try and get the k-mers for the conserved sequence and store them in a functional family object
+                            try
+                            {
+                                temp.Kmers.AddRange(GenerateKmers(conservedRegion, 3));
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine("\nError While Computing K-Mers.\n" + e.Message);
+                                errorLog.AppendLine($"6, Error While Computing K-Mers, Functional Family - {currentFunFam[0].Functional_family}");
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("\nError While Computing Conserved Region.\n" + e.Message);
+                            errorLog.AppendLine($"7, Error While Computing Conserved Region, Functional Family - {currentFunFam[0].Functional_family}");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("\nError While Computing Consensus Sequence.\n" + e.Message);
+                        errorLog.AppendLine($"8, Error While Computing Consensus Sequence, Functional Family - {currentFunFam[0].Functional_family}");
+                    }
+
+                    funfams.Add(temp);
                 }
                 else
                 {
                     Console.WriteLine("Current Functional Family Has No Sequences.");
+                    errorLog.AppendLine($"9, Current Functional Family Has No Sequences, Functional Family - {currentFunFam[0].Functional_family}");
                 }
 
                 // Reset temp variables
@@ -187,10 +193,8 @@ namespace RegionExtractor
                 regions.Clear();
                 kmers.Clear();
                 msaTemp.Clear();
-                start = 0;
-                end = 0;
+                consensus = "";
                 conservedRegion = "";
-                whatToSearch = false;
                 Console.WriteLine();
 
                 // Get the next functional family
@@ -221,6 +225,13 @@ namespace RegionExtractor
                     Console.ReadLine();
                 }
             }
+
+            // Store the error log in a text file
+            if (System.IO.File.Exists("errorlog.csv"))
+            {
+                System.IO.File.Delete("errorlog.csv");
+            }
+            System.IO.File.WriteAllText("errorlog.csv", errorLog.ToString());
         }
 
         // Method to get next set of sequences for a functional family
@@ -377,6 +388,10 @@ namespace RegionExtractor
             {
                 return msa.ElementAt(0);
             }
+            else
+            {
+                return "No Data To Work Consesnsus Sequence On.";
+            }
 
             // Return consensus
             return temp;
@@ -386,48 +401,85 @@ namespace RegionExtractor
         public char GetCharacter(List<char> data)
         {
             // Some temporary variables
-            List<char> characters = new List<char>();
-            List<int> charCounter = new List<int>();
-            int max = 0;
+            var characters = new List<Tuple<char, int>>();
+            Tuple<char, int> max = Tuple.Create(' ', 0);
 
             //  Iterate through all the aligned sequences
             foreach (char c in data)
             {
                 // Check if byte is already in list
-                if (!characters.Contains(c))
+                var result = characters.FindIndex(character => character.Item1.Equals(c));
+                if(result == -1)
                 {
-                    characters.Add(c);
-                    charCounter.Add(1);
+                    characters.Add(Tuple.Create(c, 1));
                 }
                 else
                 {
-                    charCounter[characters.IndexOf(c)] += 1;
+                    characters[result] = Tuple.Create(characters[result].Item1, characters[result].Item2 + 1);
                 }
             }
 
             // Analyze the gathered data so far
-            foreach (int b in charCounter)
+            foreach (Tuple<char, int> character in characters)
             {
                 // Check if current value is greater than the maximum
-                if ((b > charCounter.ElementAt(max)) || 
-                    ((b == charCounter.ElementAt(max)) && 
-                    (characters.ElementAt(charCounter.IndexOf(b)).Equals('-'))))
+                if ((character.Item2 > max.Item2) || ((character.Item2 == max.Item2) && (max.Item1.Equals('-'))))
                 {
-                    max = charCounter.IndexOf(b);
+                    max = character;
                 }
             }
 
-            return characters[max];
+            return max.Item1;
+        }
+
+        // Method that returns the conserved regions of the consesnsus sequence
+        public string GetConserved(string consensus)
+        {
+            // Variables
+            int start = 0;                      // Holds the start index from the consensus sequence of the conserved region
+            int end = 0;                        // Holds the end index from the consensus sequence of the conserved region
+            bool whatToSearch = false;          // Determines what we are searching for - false(start) true(end)
+
+            // Check if consesnsus sequence has '-' gap characters at the start and at the end
+            if (!consensus.ElementAt(0).Equals("-") && !consensus.ElementAt(consensus.Count() - 1).Equals("-"))
+            {
+                for (int i = 0; i < consensus.Count(); i++)
+                {
+                    // This means we are searching for the start index
+                    if (!whatToSearch)
+                    {
+                        if (!consensus.ElementAt(i).Equals('-'))
+                        {
+                            start = i;
+                            i--;
+                            whatToSearch = true;
+                        }
+                    }
+                    // This means we are searching for the end index
+                    else
+                    {
+                        if (!consensus.ElementAt(i).Equals('-'))
+                        {
+                            end = i;
+                        }
+                    }
+                }
+
+                return consensus.Substring(start, ((end - start) + 1));
+            }
+            else
+            {
+                return consensus;
+            }
         }
 
         // A recursive method to output all the possible kmers of a particular size
-        private List<Kmer> GenerateKmers(string sequence, int length)
+        private List<string> GenerateKmers(string sequence, int length)
         {
             // Some temp variables
             string temp;
-            Kmer current;
             List<string> conservedRegions = sequence.Split('-').ToList();
-            List<Kmer> kmers = new List<Kmer>();
+            List<string> kmers = new List<string>();
 
             // Check the conserved regions
             conservedRegions = conservedRegions.Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
@@ -439,8 +491,7 @@ namespace RegionExtractor
                 for (int i = 0; i <= (s.Count() - length); i++)
                 {
                     temp = s.Substring(i, length);
-                    current = new Kmer(temp);
-                    kmers.Add(current);
+                    kmers.Add(temp);
                 }
             }
 

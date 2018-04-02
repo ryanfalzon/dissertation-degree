@@ -56,7 +56,7 @@ namespace RegionExtractor
                         // Check if connection was successful
                         if (db.Connect(true))
                         {
-                            data = db.Query1();
+                            data = db.GetData();
                             if (db.Connect(false))
                             {
                                 ra = new RegionAnalyzer(data);

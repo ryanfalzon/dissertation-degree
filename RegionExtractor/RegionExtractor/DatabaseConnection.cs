@@ -72,10 +72,10 @@ namespace RegionExtractor
         }
 
         // A method to query the database for the sequences and functional families
-        public List<DataRow> Query1()
+        public List<DataRow> GetData()
         {
             // Create a query
-            MySqlCommand command = new MySqlCommand(("SELECT * FROM " + this.tableName + ";"), connection);
+            MySqlCommand command = new MySqlCommand(("SELECT * FROM " + this.tableName + " ORDER BY functional_family ASC;"), connection);
             try
             {
                 MySqlDataReader reader = command.ExecuteReader();

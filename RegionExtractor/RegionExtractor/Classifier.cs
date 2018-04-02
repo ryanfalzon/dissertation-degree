@@ -30,7 +30,7 @@ namespace RegionExtractor
             var result = graphDatabase.FromGraph1();
             foreach (var item in result)
             {
-                this.funfams.Add(new FunctionalFamily(item.Name, item.Consensus));
+                this.funfams.Add(new FunctionalFamily(item.Name, item.Consensus, item.Conserved));
             }
         }
 
@@ -46,7 +46,12 @@ namespace RegionExtractor
             /*  Step 1 - Calculate the Levenshtein Distance for each functional family's consensus
                 seqeunce to shortlist the long list of functional familiex to a smaller one. These
                 shortlisted fdunctional families will then proceed for further analysis */
-            List<string> furtherAnalysis = LevenshteinDistance(newSequence, threshold1);
+            //List<string> furtherAnalysis = LevenshteinDistance(newSequence, threshold1);
+            List<string> furtherAnalysis = new List<string>();
+            foreach(FunctionalFamily funfam in this.funfams)
+            {
+                furtherAnalysis.Add(funfam.Name);
+            }
 
             // Compare the kmers for the functional families that require further analyzing
             FunctionalFamily current;
@@ -55,7 +60,7 @@ namespace RegionExtractor
             {
 
                 // Check if the current funfam is already stored locally
-                current = funfams.Where(ff => ff.Funfam.Equals(funfam)).ElementAt(0);
+                current = funfams.Where(ff => ff.Name.Equals(funfam)).ElementAt(0);
                 if(current.Kmers.Count == 0)
                 {
                     int index = funfams.IndexOf(current);
@@ -103,13 +108,13 @@ namespace RegionExtractor
             // Calculate the Levenshtein Distance
             foreach(FunctionalFamily funfam in this.funfams)
             {
-                Console.WriteLine("Current Functional Family being Analyzed:\nName: " + funfam.Funfam + "\nConsensus Sequence: " + funfam.ConservedSequence + "\n");
+                Console.WriteLine("Current Functional Family being Analyzed:\nName: " + funfam.Name + "\nConsensus Sequence: " + funfam.ConservedRegion + "\n");
 
                 // Initialize the Levenshtein function
-                lev = new Levenshtein(funfam.ConservedSequence);
+                lev = new Levenshtein(funfam.ConservedRegion);
 
                 // Get the kmers and calculate the Levenshtein distance
-                kmers = GenerateKmers(newSequence, funfam.ConservedSequence.Count());
+                kmers = GenerateKmers(newSequence, funfam.ConservedRegion.Count());
                 Console.WriteLine("Evaluating new sequences' kmers with the consensus sequence of current funfam...");
                 foreach(string kmer in kmers)
                 {
@@ -131,7 +136,7 @@ namespace RegionExtractor
                 // Check if the overall similarity exceeds the threshold set by the user
                 if(temp >= threshold)
                 {
-                    toReturn.Add(funfam.Funfam);
+                    toReturn.Add(funfam.Name);
                 }
 
                 // Reset the variables
@@ -162,81 +167,62 @@ namespace RegionExtractor
         // A method that will compare a list of kmers with another
         private FunFamResult CompareKmers(FunctionalFamily funfam, List<string> newSequence, int threshold)
         {
-            Console.WriteLine("Further Analysis of FunctionalFamily: " + funfam.Funfam);
+            Console.WriteLine("Further Analysis of FunctionalFamily: " + funfam.Name);
             
             // Temp variables
-            double score = 0;
+            int score = 0;
             int counterNewSequence = 0;
             int counterFunfam = 0;
-            int tempCounter = 0;
+            int tempScore = 0;
             int percentage;
 
-            // Iterate the list until all the kmers of the new sequence have been visited
-            while (counterNewSequence < newSequence.Count)
+            // Check if the functional family has any kmers
+            if (funfam.Kmers.Count > 0)
             {
-                tempCounter = counterFunfam;
 
-                // Compare the current kmer of the new sequence with all the kmers the functional family has
-                while(counterFunfam < funfam.Kmers.Count)
+                // Iterate until all kmers in the functional family have been visited
+                while (counterFunfam < funfam.Kmers.Count)
                 {
-                    // If they match, increase the score and move onto the next kmer in the new sequence
-                    if (newSequence[counterNewSequence].Equals(funfam.Kmers.ElementAt(counterFunfam).K))
+                    // Keep note of the current score at this time
+                    tempScore = score;
+
+                    // Iterate all the kmers in the new sequence until the current kmer of the functional family has been found
+                    while (counterNewSequence < newSequence.Count)
                     {
-                        counterFunfam++;
-                        score++;
-                        break;
+                        if (newSequence[counterNewSequence].Equals(funfam.Kmers[counterFunfam]))
+                        {
+                            score++;
+                            break;
+                        }
+                        counterNewSequence++;
                     }
-                    else
+
+                    // Move onto the next kmer in the functional family
+                    counterFunfam++;
+
+                    // If the score did not change, then this means that the current kmer of the functional family has not been found in the new sequence
+                    if (tempScore == score)
                     {
-                        /*// Iterate through the current kmers to calculate a subscore
-                        int subScore = 0;
-                        for (int i = 0; i < newSequence[counterNewSequence].Count(); i++)
-                        {
-                            if (newSequence[counterNewSequence].ElementAt(i).Equals(funfam.Kmers.ElementAt(counterFunfam).K.ElementAt(i)))
-                            {
-                                subScore++;
-                            }
-
-                            // If 2 characters are already wrong process can break
-                            if((score == 0) && (i == newSequence[counterNewSequence].Count() - 2))
-                            {
-                                break;
-                            }
-                        }
-
-                        // If score is greater than 1, then allocate a portion fo the score
-                        if (subScore > 1)
-                        {
-                            counterFunfam++;
-                            score += 2 / 3;
-                        }
-                        else
-                        {*/
-                            counterFunfam++;
-
-                            if (counterFunfam == funfam.Kmers.Count)
-                            {
-                                counterFunfam = tempCounter;
-                                break;
-                            }
-                        //}
+                        counterNewSequence = 0;
                     }
                 }
-                counterNewSequence++;
-            }
 
-            // Check if the percentage score exceeds the threshold set by the user
-            percentage = Convert.ToInt32(((score * 100) / funfam.Kmers.Count));
-            Console.WriteLine(score);
-            Console.WriteLine(funfam.Kmers.Count);
-            Console.WriteLine("Percentage Score is " + percentage.ToString() + "%");
-            if (percentage >= threshold)
-            {
-                return new FunFamResult(funfam.Funfam, percentage);    // This means that the new sequence is part of the functional family
+                // Check if the percentage score exceeds the threshold set by the user
+                percentage = Convert.ToInt32(((score * 100) / funfam.Kmers.Count));
+                Console.WriteLine("Percentage Score is " + percentage.ToString() + "%");
+                if (percentage >= threshold)
+                {
+                    return new FunFamResult(funfam.Name, percentage);    // This means that the new sequence is part of the functional family
+
+                }
+                else
+                {
+                    return null;    // This means that the new sequence is not part of the functional family
+                }
             }
             else
             {
-                return null;    // This means that the new sequence is not part of the functional family
+                return null;
             }
         }
     }
