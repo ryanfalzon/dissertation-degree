@@ -93,23 +93,23 @@ namespace RegionExtractor
         // A method that will take a list of strings and a new string and will give the Levenshtein Distance for the strings
         private List<Tuple<string, int, int>> LevenshteinDistance(string newSequence, int threshold)
         {
-            // Temp variables
-            Levenshtein distanceFunction;                                                       // Tool used to calculate the Levenshtein for the passed new sequences
-            List<string> kmers = new List<string>();                                            // Holds the kmers of the current functional family being analyzed
+            // List of regions to return for further analyzing
             List<Tuple<string, int, int>> toReturn = new List<Tuple<string, int, int>>();       // Holds the list of functional family names that require further analyzing
-            double temp = 0;
-            Tuple<double, int> max = Tuple.Create<double, int>(0, 0);
 
             // Calculate the Levenshtein Distance
             Parallel.ForEach(this.funfams, (funfam) =>
             {
                 Console.WriteLine("Current Functional Family being Analyzed:\nName: " + funfam.Name + "\nConsensus Sequence: " + funfam.ConservedRegion + "\n");
 
+                // Some temp variables
+                double temp = 0;
+                Tuple<double, int> max = Tuple.Create<double, int>(0, 0);
+
                 // Initialize the Levenshtein function
-                distanceFunction = new Levenshtein(funfam.ConservedRegion);
+                Levenshtein distanceFunction = new Levenshtein(funfam.ConservedRegion);
 
                 // Get the kmers and calculate the Levenshtein distance
-                kmers = GenerateKmers(newSequence, funfam.ConservedRegion.Count());
+                List<string> kmers = GenerateKmers(newSequence, funfam.ConservedRegion.Count());
                 Console.WriteLine("Evaluating new sequences' kmers with the consensus sequence of current funfam...");
                 foreach (string kmer in kmers)
                 {
