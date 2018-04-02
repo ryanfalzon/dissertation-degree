@@ -11,12 +11,12 @@ namespace RegionExtractor
         // Private variables
         private string functionalFamily;
         private int regionX;
-        private int regionY;
+        private int length;
         private int percentageScore;
 
         // Getters and setters
         public string FunctionalFamily { get => functionalFamily; set => functionalFamily = value; }
-        public int RegionY { get => regionY; set => regionY = value; }
+        public int Length { get => length; set => length = value; }
         public int RegionX { get => regionX; set => regionX = value; }
         public int PercentageScore { get => percentageScore; set => percentageScore = value; }
 
@@ -32,7 +32,7 @@ namespace RegionExtractor
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine($"Functional Family -> {this.functionalFamily}");
-            sb.AppendLine($"Region of Seqeunce Which Maps To Functional Family -> {this.regionX}-{this.regionY}");
+            sb.AppendLine($"Region of Seqeunce Which Maps To Functional Family -> {this.regionX}-{this.length}");
             sb.AppendLine($"PERCENTAGE SCORE -> {this.percentageScore}%");
             return sb.ToString();
         }
