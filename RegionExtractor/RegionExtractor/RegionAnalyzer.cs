@@ -33,7 +33,6 @@ namespace RegionExtractor
             List<string> msaTemp = new List<string>();                              // Temporarily holds the msa as a list of strings
             string consensus = "";                                                  // Holds the consensus sequence for the processed MSA
             string conservedRegion = "";                                            // Holds the conserved region for the consensus seqeunce
-            List<Kmer> kmers = new List<Kmer>();                                    // Holds all the kmers for the generated consensus sequence
             List<FunctionalFamily> funfams = new List<FunctionalFamily>();          // Holds all the data which will later be transfered to the graph database
             FunctionalFamily temp;                                                  // Temporarily holds the current functional family instance
             StringBuilder errorLog = new StringBuilder();                           // A string builder which will hold all error that are encountered
@@ -191,7 +190,6 @@ namespace RegionExtractor
                 lengths.Clear();
                 currentFunFam.Clear();
                 regions.Clear();
-                kmers.Clear();
                 msaTemp.Clear();
                 consensus = "";
                 conservedRegion = "";
@@ -215,7 +213,7 @@ namespace RegionExtractor
                     Console.WriteLine("\nWriting data to graph. Please wait...");
 
                     // Send data to graph database
-                    GraphDatabaseConnection gdc = new GraphDatabaseConnection("bolt://localhost", "neo4j", "fyp_ryanfalzon");
+                    GraphDatabaseConnection gdc = new GraphDatabaseConnection();
                     foreach (FunctionalFamily funfam in funfams)
                     {
                         gdc.ToGraph(funfam);
@@ -301,7 +299,7 @@ namespace RegionExtractor
                 // Output statistics
                 Console.WriteLine("\n\nStatistics");
                 Console.WriteLine("----------");
-                Console.Write("\nMaximum Length = " + max + "\nMinimum Length = " + min + "\nAverage Length = " + average + "\nMedian Length = ");
+                Console.Write($"\nMaximum Length = {max}\nMinimum Length = {min}\nAverage Length = {average}\nMedian Length = ");
 
                 // Check if length of lengths is even
                 if ((lengths.Count % 2) == 0)
@@ -312,7 +310,7 @@ namespace RegionExtractor
                 {
                     median = lengths.ElementAt(lengths.Count / 2);
                 }
-                Console.Write(median + "\nVariance = " + variance + "\nStandard Devaition = " + standardDeviation + "\n\n");
+                Console.Write($"{median}\nVariance = {variance}\nStandard Devaition = {standardDeviation}\n\n");
             }
         }
 

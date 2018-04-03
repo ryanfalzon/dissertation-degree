@@ -76,9 +76,7 @@
     <Compile Include="DatabaseConnection.cs" />
     <Compile Include="FunFamResult.cs" />
     <Compile Include="GraphDatabaseConnection.cs" />
-    <Compile Include="Kmer.cs" />
     <Compile Include="Menu.cs" />
-    <Compile Include="Offset.cs" />
     <Compile Include="ProbabilisticDataStructures\BloomFilter.cs" />
     <Compile Include="ProbabilisticDataStructures\Buckets.cs" />
     <Compile Include="ProbabilisticDataStructures\CountingBloomFilter.cs" />

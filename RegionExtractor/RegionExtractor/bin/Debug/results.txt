@@ -1,82 +1,22 @@
 Sequence Analyzed:
-MDFNAGVPMSSLSPLMNQDAMWQMNLSSDETMETGSYPERPGEPDCSYYIRTGLCRFGSTCRFNHPRDRELVIATARMRGEYPERIGQPECEYYLKTGTCKFGVTCKFHHPRNKAGIAGRVSLNMLGYPLRSNEVDCAYFLRTGHCKFGGTCKFNHPQPQPTNMMVPTSGQQSYPWSRASFIASPRWQDPSSYASLIMPQGVVPVQGWNPYSGQLGSVSPSGTGNDQNYRNLQQNETIESGSQSQGSFSGYNPGSSVPLGGYYALPRENVFPERPGQPECQFYMKTGDCKFGTVCKFHHPRDRQAPPPDCLLSSIGLPLRPGEPLCVFYTRYGICKFGPSCKFDHPMRVFTYDNTASETDEVVETSTGKSRRLSVSETRQAATTSSGKDTTIDNTQQ
+XGDDLGANDELISFKDEGEQEEKNSENSSAERDLADVKSSLVNESETNQNSSSDSEAERRPPPRSESFRDKSRESLEEAAKRQDGGLFKGPPYPGYPFIMIPDLTSPYLPNGSLSPTARTYLQMKWPLLDVQAGSLQSRQTLKDARSPSPAHIVSNKVPVVQHPHHVHPLTPLITYSNEHFTPGNPPPHLPADVDPKTGIPRPPHPPDISPYYPLSPGTVGQIPHPLGWLVPQQGQPVYPITTGGFRHPYPTALTVNASMSRFPPHMVPPHHTLHTTGIPHPAIVTPTVKQESSQSDVGSLHSSKHQDSKKEEEKKKPHIKKPLNAFMLYMKEMRAKVVAECTLKESAAINQILGRRWHALSREEQAKYYELARKERQLHMQLYPGWSARDNYGKKKKRKRDKQPGETNDLSAPKKCRARFGLDQQNNWCGPCSL
 
-Functional Family -> 1.10.470.10.FF248
-Region of Seqeunce Which Maps To Functional Family -> 0-0
+Functional Family -> 1.10.30.10.FF4311
+Region of Seqeunce Which Maps To Functional Family -> 304-64
 PERCENTAGE SCORE -> 100%
 
 
-Functional Family -> 2.130.10.30.FF7550
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 2.170.270.10.FF5102
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 2.60.40.10.FF11730
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 3.10.580.10.FF4200
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 3.30.40.10.FF60607
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 3.30.870.10.FF12819
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 3.40.50.2300.FF576
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 3.40.50.300.FF627676
-Region of Seqeunce Which Maps To Functional Family -> 0-0
+Functional Family -> 3.40.50.980.FF70599
+Region of Seqeunce Which Maps To Functional Family -> 33-4
 PERCENTAGE SCORE -> 100%
 
 
-Functional Family -> 3.40.630.30.FF24472
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
+Functional Family -> 4.10.900.10.FF590
+Region of Seqeunce Which Maps To Functional Family -> 0-61
+PERCENTAGE SCORE -> 84%
 
 
-Functional Family -> 3.40.630.30.FF70402
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 75%
-
-
-Functional Family -> 3.80.10.10.FF106574
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 3.90.190.10.FF11671
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 50%
-
-
-Functional Family -> 4.10.1000.10.FF5412
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 100%
-
-
-Functional Family -> 4.10.1000.10.FF5510
-Region of Seqeunce Which Maps To Functional Family -> 0-0
-PERCENTAGE SCORE -> 80%
-
-
-Total Elapsed Time: 2963.142593
+Total Elapsed Time: 1233.236385
 ----------------------------------------------
 
 

@@ -82,11 +82,11 @@ namespace RegionExtractor
 
             // Stop the stopwatch
             watch.Stop();
-            Console.WriteLine("Total Time For Evaluation: " + watch.Elapsed.TotalSeconds.ToString());
+            Console.WriteLine($"Total Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString("#.##")}");
             Console.WriteLine("--------------------------------------------------------------------------------------------------------\n\n");
 
             // Return the result for this comparison
-            compResult.TotalTime = watch.Elapsed.TotalSeconds.ToString();
+            compResult.TotalTime = watch.Elapsed.TotalMinutes.ToString("#.##");
             return compResult;
         }
 
@@ -97,9 +97,13 @@ namespace RegionExtractor
             List<Tuple<string, int, int>> toReturn = new List<Tuple<string, int, int>>();       // Holds the list of functional family names that require further analyzing
 
             // Calculate the Levenshtein Distance
-            Parallel.ForEach(this.funfams, (funfam) =>
+            //Parallel.ForEach(this.funfams, (funfam) =>
+            foreach (FunctionalFamily funfam in this.funfams)
             {
-                Console.WriteLine("Current Functional Family being Analyzed:\nName: " + funfam.Name + "\nConsensus Sequence: " + funfam.ConservedRegion + "\n");
+                if (funfam.Name.Equals("4.10.900.10.FF590")){
+                    Console.WriteLine();
+                }
+                Console.WriteLine($"Current Functional Family being Analyzed:\nName: {funfam.Name}\nConsensus Sequence: {funfam.ConservedRegion}\n");
 
                 // Some temp variables
                 double temp = 0;
@@ -117,7 +121,7 @@ namespace RegionExtractor
                     // Calculate the distance and overall similarity
                     temp = distanceFunction.Distance(kmer);
                     temp = ((kmer.Count() - temp) / kmer.Count()) * 100;
-                    Console.WriteLine(kmer + " - " + temp.ToString("#.##") + "% Similar");
+                    Console.WriteLine($"{kmer} - {temp.ToString("#.##")}% Similar");
 
                     // Check if similarity is greater than threshold
                     if (temp >= max.Item1)
@@ -141,7 +145,8 @@ namespace RegionExtractor
                 kmers.Clear();
                 temp = 0;
                 max = Tuple.Create<double, int>(0, 0);
-            });
+                //});
+            }
 
             // Return the list
             return toReturn;
@@ -165,7 +170,7 @@ namespace RegionExtractor
         // A method that will compare a list of kmers with another
         private FunFamResult CompareKmers(FunctionalFamily funfam, List<string> newSequence, int threshold)
         {
-            Console.WriteLine("Further Analysis of FunctionalFamily: " + funfam.Name);
+            Console.WriteLine($"Further Analysis of FunctionalFamily: {funfam.Name}");
             
             // Temp variables
             int score = 0;
@@ -207,7 +212,7 @@ namespace RegionExtractor
 
                 // Check if the percentage score exceeds the threshold set by the user
                 percentage = Convert.ToInt32(((score * 100) / funfam.Kmers.Count));
-                Console.WriteLine("Percentage Score is " + percentage.ToString() + "%");
+                Console.WriteLine($"Percentage Score is {percentage.ToString()}%");
                 if (percentage >= threshold)
                 {
                     return new FunFamResult(funfam.Name, percentage);    // This means that the new sequence is part of the functional family
