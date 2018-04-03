@@ -48,7 +48,7 @@ namespace RegionExtractor
                 shortlisted fdunctional families will then proceed for further analysis */
             List<Tuple<string, int, int>> furtherAnalysis = LevenshteinDistance(newSequence, threshold1);
 
-            // Compare the kmers for the functional families that require further analyzing
+            // Step 2 - Compare the kmers for the functional families that require further analyzing
             FunctionalFamily current;
             FunFamResult funfamResult;
             foreach(Tuple<string, int, int> funfam in furtherAnalysis)
@@ -174,10 +174,10 @@ namespace RegionExtractor
             
             // Temp variables
             int score = 0;
+            int tempScore = 0;
+            int scorePercentage = 0;
             int counterNewSequence = 0;
             int counterFunfam = 0;
-            int tempScore = 0;
-            int percentage;
 
             // Check if the functional family has any kmers
             if (funfam.Kmers.Count > 0)
@@ -211,11 +211,11 @@ namespace RegionExtractor
                 }
 
                 // Check if the percentage score exceeds the threshold set by the user
-                percentage = Convert.ToInt32(((score * 100) / funfam.Kmers.Count));
-                Console.WriteLine($"Percentage Score is {percentage.ToString()}%");
-                if (percentage >= threshold)
+                scorePercentage = Convert.ToInt32(((score * 100) / funfam.Kmers.Count));
+                Console.WriteLine($"Percentage Score is {scorePercentage.ToString()}%");
+                if (scorePercentage >= threshold)
                 {
-                    return new FunFamResult(funfam.Name, percentage);    // This means that the new sequence is part of the functional family
+                    return new FunFamResult(funfam.Name, scorePercentage);    // This means that the new sequence is part of the functional family
 
                 }
                 else
