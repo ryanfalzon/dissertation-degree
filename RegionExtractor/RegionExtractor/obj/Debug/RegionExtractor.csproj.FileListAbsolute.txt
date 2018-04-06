@@ -1,3 +1,6 @@
+C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\obj\Debug\RegionExtractor.csprojResolveAssemblyReference.cache
+C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\obj\Debug\RegionExtractor.csproj.RegionExtractor.exe.config
+C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\obj\Debug\RegionExtractor.csproj.CoreCompileInputs.cache
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\RegionExtractor.exe.config
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\RegionExtractor.exe
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\RegionExtractor.pdb
@@ -108,8 +111,5 @@ C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionEx
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Neo4jClient.pdb
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Neo4jClient.xml
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\bin\Debug\Newtonsoft.Json.xml
-C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\obj\Debug\RegionExtractor.csproj.RegionExtractor.exe.config
-C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\obj\Debug\RegionExtractor.csproj.CoreCompileInputs.cache
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\obj\Debug\RegionExtractor.exe
 C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\obj\Debug\RegionExtractor.pdb
-C:\Users\Ryan Falzon\OneDrive\University\Thesis\Project\RegionExtractor\RegionExtractor\obj\Debug\RegionExtractor.csprojResolveAssemblyReference.cache

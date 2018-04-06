@@ -7,7 +7,6 @@ using Bio;
 using Bio.Algorithms.Alignment.MultipleSequenceAlignment;
 using System.IO;
 using Neo4j.Driver.V1;
-using ProbabilisticDataStructures;
 using System.Runtime.Serialization.Json;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;

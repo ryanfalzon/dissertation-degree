@@ -114,6 +114,7 @@ namespace RegionExtractor
                     {
                         if (regions.Count > 1)
                         {
+                            
                             alignedRegions = aligner.Align(regions);
                             msaTemp = SplitMSA(alignedRegions[0].ToString());
                             Console.WriteLine("\nMultiple Sequence Alignment");

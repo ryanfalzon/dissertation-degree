@@ -96,8 +96,8 @@ namespace RegionExtractor
                     tempSequence = reader["full_sequence"].ToString();
                     if (tempSequence != "")
                     {
-                        tempHeader = tempSequence.Substring(0, (tempSequence.IndexOf("SV=") + 3));
-                        tempSequence = tempSequence.Substring(tempSequence.IndexOf("SV=") + 4);
+                        tempHeader = tempSequence.Substring(0, tempSequence.IndexOf('\n'));
+                        tempSequence = tempSequence.Substring(tempSequence.IndexOf('\n') + 1);
                         tempSequence = Regex.Replace(tempSequence, @"\t|\n|\r", "");
                     }
 
