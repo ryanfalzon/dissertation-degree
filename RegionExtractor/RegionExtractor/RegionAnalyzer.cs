@@ -358,6 +358,78 @@ namespace RegionExtractor
             consensus = consensus.Replace('X', '-');
             return consensus;
         }*/
+        // Method to calculate the consensus of a set of aligned sequences
+        private string GetConsensus(List<string> msa)
+        {
+            // Some temporary variables
+            SimpleConsensusResolver resolver = new SimpleConsensusResolver(Alphabets.Protein);
+            List<char> coloumn = new List<char>();
+            string temp = "";
+
+            // Remove sequences that are composed of only '-' gap characters
+            msa.RemoveAll(sequence => sequence.All(Char.IsPunctuation));
+
+
+            //  Iterate through all the aligned sequences
+            if (msa.Count > 1)
+            {
+                for (int i = 0; i < msa[0].Length; i++)
+                {
+                    coloumn.Clear();
+                    for (int j = 0; j < msa.Count; j++)
+                    {
+                        coloumn.Add(msa[j][i]);
+                    }
+                    temp += GetCharacter(coloumn);
+                }
+            }
+            else if (msa.Count == 1)
+            {
+                return msa.ElementAt(0);
+            }
+            else
+            {
+                return "No Data To Work Consesnsus Sequence On.";
+            }
+
+            // Return consensus
+            return temp;
+        }
+
+        // Method to analayze the passed data to get the most frequent character
+        public char GetCharacter(List<char> data)
+        {
+            // Some temporary variables
+            var characters = new List<Tuple<char, int>>();
+            Tuple<char, int> max = Tuple.Create(' ', 0);
+
+            //  Iterate through all the aligned sequences
+            foreach (char c in data)
+            {
+                // Check if byte is already in list
+                var result = characters.FindIndex(character => character.Item1.Equals(c));
+                if (result == -1)
+                {
+                    characters.Add(Tuple.Create(c, 1));
+                }
+                else
+                {
+                    characters[result] = Tuple.Create(characters[result].Item1, characters[result].Item2 + 1);
+                }
+            }
+
+            // Analyze the gathered data so far
+            foreach (Tuple<char, int> character in characters)
+            {
+                // Check if current value is greater than the maximum
+                if ((character.Item2 > max.Item2) || ((character.Item2 == max.Item2) && (max.Item1.Equals('-'))))
+                {
+                    max = character;
+                }
+            }
+
+            return max.Item1;
+        }
 
         // Method to get the conserved region for the passed consensus sequence
         private string GetConserved(string consensus)
@@ -490,79 +562,6 @@ namespace RegionExtractor
             {
                 Console.WriteLine($"Error while writing the csv files.\n{e.Message}");
             }
-        }
-
-        // Method to calculate the consensus of a set of aligned sequences
-        private string GetConsensus(List<string> msa)
-        {
-            // Some temporary variables
-            SimpleConsensusResolver resolver = new SimpleConsensusResolver(Alphabets.Protein);
-            List<char> coloumn = new List<char>();
-            string temp = "";
-
-            // Remove sequences that are composed of only '-' gap characters
-            msa.RemoveAll(sequence => sequence.All(Char.IsPunctuation));
-
-
-            //  Iterate through all the aligned sequences
-            if (msa.Count > 1)
-            {
-                for (int i = 0; i < msa[0].Length; i++)
-                {
-                    coloumn.Clear();
-                    for (int j = 0; j < msa.Count; j++)
-                    {
-                        coloumn.Add(msa[j][i]);
-                    }
-                    temp += GetCharacter(coloumn);
-                }
-            }
-            else if (msa.Count == 1)
-            {
-                return msa.ElementAt(0);
-            }
-            else
-            {
-                return "No Data To Work Consesnsus Sequence On.";
-            }
-
-            // Return consensus
-            return temp;
-        }
-
-        // Method to analayze the passed data to get the most frequent character
-        public char GetCharacter(List<char> data)
-        {
-            // Some temporary variables
-            var characters = new List<Tuple<char, int>>();
-            Tuple<char, int> max = Tuple.Create(' ', 0);
-
-            //  Iterate through all the aligned sequences
-            foreach (char c in data)
-            {
-                // Check if byte is already in list
-                var result = characters.FindIndex(character => character.Item1.Equals(c));
-                if (result == -1)
-                {
-                    characters.Add(Tuple.Create(c, 1));
-                }
-                else
-                {
-                    characters[result] = Tuple.Create(characters[result].Item1, characters[result].Item2 + 1);
-                }
-            }
-
-            // Analyze the gathered data so far
-            foreach (Tuple<char, int> character in characters)
-            {
-                // Check if current value is greater than the maximum
-                if ((character.Item2 > max.Item2) || ((character.Item2 == max.Item2) && (max.Item1.Equals('-'))))
-                {
-                    max = character;
-                }
-            }
-
-            return max.Item1;
         }
     }
 }
