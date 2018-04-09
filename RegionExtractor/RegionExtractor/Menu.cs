@@ -2,14 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using Bio;
-using Bio.Algorithms.Alignment.MultipleSequenceAlignment;
-using System.IO;
-using Neo4j.Driver.V1;
-using System.Runtime.Serialization.Json;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace RegionExtractor
 {
@@ -70,50 +62,65 @@ namespace RegionExtractor
                     {
                         Console.Write("\nEnter file name where new sequences are stored: ");
                         string file = Console.ReadLine();
-                        Console.Write("Enter Threshold For Shortlisting Functional Families: ");
-                        string thresholdShortlist = Console.ReadLine();
-                        Console.Write("Enter Threshold For K-Mer Comparison Results: ");
-                        string thresholdKmerResults = Console.ReadLine();
+                        Console.Write("Enter Threshold For Distance Function: ");
+                        string thresholdDistanceFunction = Console.ReadLine();
+                        Console.Write("Enter Threshold For Kmer Comparison: ");
+                        string thresholdKmerComparison = Console.ReadLine();
 
                         // Get individual sequences from the text file contents
-                        string textfile = System.IO.File.ReadAllText(file);
-                        textfile = textfile.Replace(System.Environment.NewLine, "");
-                        List<string> newSequences = textfile.Split(';').ToList();
-                        newSequences = newSequences.Where(element => !string.IsNullOrEmpty(element)).ToList();
-
-                        // Classsify new sequences
-                        List<ComparisonResult> results = new List<ComparisonResult>();
-                        Classifier classifier = new Classifier();
-                        foreach (string newSequence in newSequences)
+                        try
                         {
-                            results.Add(classifier.Classify(newSequence, Convert.ToInt32(thresholdShortlist), Convert.ToInt32(thresholdKmerResults)));
-                        }
+                            string textfile = System.IO.File.ReadAllText(file);
+                            textfile = textfile.Replace(System.Environment.NewLine, "");
+                            List<string> newSequences = textfile.Split(';').ToList();
+                            newSequences = newSequences.Where(element => !string.IsNullOrEmpty(element)).ToList();
 
-                        // Ask the user if he wishes to save the results in a text file
-                        Console.Write("\nWould You Like To Save Your Results? Y/N: ");
-                        string store = Console.ReadLine();
-                        if (store.Equals("Y"))
-                        {
-                            Console.Write("Enter A Name For The Destination File: ");
-                            string resultsFile = Console.ReadLine();
-                            StringBuilder sb = new StringBuilder();
-                            foreach (ComparisonResult result in results)
+                            // Classsify new sequences
+                            List<ComparisonResult> results = new List<ComparisonResult>();
+                            Classifier classifier = new Classifier();
+                            foreach (string newSequence in newSequences)
                             {
-                                sb.AppendLine(result.ToString());
+                                results.Add(classifier.Classify(newSequence, Convert.ToInt32(thresholdDistanceFunction), Convert.ToInt32(thresholdKmerComparison)));
                             }
 
-                            // Check if file already exists
-                            if (System.IO.File.Exists(resultsFile))
+                            // Ask the user if he wishes to save the results in a text file
+                            Console.Write("\nWould You Like To Save Final Results? Y/N: ");
+                            string store = Console.ReadLine();
+                            if (store.Equals("Y"))
                             {
-                                // Delete the file
-                                Console.WriteLine("File Already Exists. Removing Current Contents...");
-                                System.IO.File.Delete(resultsFile);
-                            }
-                            System.IO.File.WriteAllText(resultsFile, sb.ToString());
-                        }
+                                Console.Write("Enter A Name For The Destination File: ");
+                                string resultsFile = Console.ReadLine();
+                                StringBuilder sb = new StringBuilder();
+                                foreach (ComparisonResult result in results)
+                                {
+                                    sb.AppendLine(result.ToString());
+                                }
 
-                        Console.Write("Process Completed. Press Any Key To Continue...");
-                        Console.ReadLine();
+                                // Create a directory
+                                if (!System.IO.Directory.Exists(@"..\Results"))
+                                {
+                                    System.IO.Directory.CreateDirectory(@"..\Results");
+                                }
+
+                                // Create a csv file
+                                if (System.IO.File.Exists(@"..\Results\" + resultsFile))
+                                {
+                                    // Delete the file
+                                    Console.WriteLine("File Already Exists. Removing Current Contents...");
+                                    System.IO.File.Delete(@"..\Results\" + resultsFile);
+                                }
+                                System.IO.File.WriteAllText(@"..\Results\" + resultsFile, sb.ToString());
+                            }
+
+                            Console.Write("Process Completed. Press Any Key To Continue...");
+                            Console.ReadLine();
+                        }
+                        catch(Exception e)
+                        {
+                            Console.WriteLine("\nError While Reading Text File");
+                            Console.Write("Press Any key To Continue...");
+                            Console.ReadLine();
+                        }
                         break;
                     }
 

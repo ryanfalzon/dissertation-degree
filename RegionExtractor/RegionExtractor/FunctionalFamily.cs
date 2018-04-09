@@ -11,35 +11,40 @@ namespace RegionExtractor
         // Private properties
         private string name;
         private string consensusSequence;
-        private string conservedRegion;
         private List<string> kmers;
 
         // Getters and setters
         public string Name { get => name; set => name = value; }
-        public string ConservedRegion { get => conservedRegion; set => conservedRegion = value; }
         public string ConsensusSequence { get => consensusSequence; set => consensusSequence = value; }
         internal List<string> Kmers { get => kmers; set => kmers = value; }
 
         // Constructor 1
-        public FunctionalFamily(string funfam)
+        public FunctionalFamily()
         {
-            this.name = funfam;
             this.kmers = new List<string>();
         }
 
         // Constructor 2
-        public FunctionalFamily(string funfam, string consensusSequence, string conservedRegion)
+        public FunctionalFamily(string name)
         {
-            this.name = funfam;
-            this.consensusSequence = consensusSequence;
-            this.conservedRegion = conservedRegion;
+            this.name = name;
             this.kmers = new List<string>();
         }
 
         // Constructor 3
-        public FunctionalFamily()
+        public FunctionalFamily(string name, string consensusSequence)
         {
+            this.name = name;
+            this.consensusSequence = consensusSequence;
             this.kmers = new List<string>();
+        }
+        
+        // Constructor 4
+        public FunctionalFamily(string name, string consensusSequence, List<string> kmers)
+        {
+            this.name = name;
+            this.consensusSequence = consensusSequence;
+            this.kmers = kmers;
         }
     }
 }

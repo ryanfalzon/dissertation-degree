@@ -42,7 +42,7 @@ namespace RegionExtractor
                 // Initialize a connection and a command
                 try
                 {
-                    connection = new MySqlConnection("host=localhost;user=root;database=" + this.databaseName + ";");
+                    connection = new MySqlConnection($"host=localhost;user=root;database={this.databaseName};");
                     connection.Open();
                     return true;
                 }
@@ -75,13 +75,14 @@ namespace RegionExtractor
         public List<DataRow> GetData()
         {
             // Create a query
-            MySqlCommand command = new MySqlCommand(("SELECT * FROM " + this.tableName + " ORDER BY functional_family ASC;"), connection);
+            MySqlCommand command = new MySqlCommand(($"SELECT * FROM {this.tableName} ORDER BY functional_family ASC;"), connection);
+            List<DataRow> data = new List<DataRow>();
             try
             {
                 MySqlDataReader reader = command.ExecuteReader();
 
                 // Temp variables
-                List<DataRow> data = new List<DataRow>();
+                
                 string tempHeader = "";
                 string tempSequence;
                 string tempRegion;
@@ -110,8 +111,7 @@ namespace RegionExtractor
                     data.Add(new DataRow(reader["protein_id"].ToString(), tempHeader, tempSequence, reader["functional_family"].ToString(), tempX, tempY));
                 }
 
-                // Sort the list according to the functional family id
-                data = data.OrderBy(s => s.Functional_family).ToList();
+                // Return the data
                 return data;
             }
             catch(Exception e)

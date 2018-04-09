@@ -15,7 +15,7 @@ namespace RegionExtractor
         // Properties
         private string db;              // bolt://localhost
         private string dbUsername;      // neo4j
-        private string dbPassword;      // fyp_ryanfalzon
+        private string dbPassword;
         private GraphClient client;
 
         // Default constructor
@@ -42,20 +42,21 @@ namespace RegionExtractor
         public string Db { get => db; set => db = value; }
         public string DbUsername { get => dbUsername; set => dbUsername = value; }
         public string DbPassword { get => dbPassword; set => dbPassword = value; }
+        public GraphClient Client { get => client; set => client = value; }
 
 
         // Method to connect to the database
         public void Connect()
         {
             // Create a new client and connect to the database
-            client = new GraphClient(new Uri("http://localhost:7474/db/data"), this.dbUsername, this.dbPassword);
-            client.Connect();
+            Client = new GraphClient(new Uri("http://localhost:7474/db/data"), this.dbUsername, this.dbPassword);
+            Client.Connect();
         }
 
         // Method to reset the graph database
         public void Reset()
         {
-            client.Cypher
+            Client.Cypher
                 .Match("(n)")
                 .DetachDelete("n")
                 .ExecuteWithoutResults();
@@ -70,7 +71,7 @@ namespace RegionExtractor
             // Temp variables
             bool first = true;
             StringBuilder queryBuilder = new StringBuilder();
-            queryBuilder.Append($"CREATE (f:FunFam {{name: \"{funfam.Name}\", conserved: \"{funfam.ConservedRegion}\"}})");
+            queryBuilder.Append($"CREATE (f:FunFam {{name: \"{funfam.Name}\", consensus: \"{funfam.ConsensusSequence}\"}})");
 
             // Add the kmers to the query
             int kmerCount = 0;
@@ -100,7 +101,7 @@ namespace RegionExtractor
         public IEnumerable<F> FromGraph1()
         {
             // Run the query
-            var queryResults = client.Cypher
+            var queryResults = Client.Cypher
                 .Match("(a:FunFam)")
                 .Return(a => a.As<F>())
                 .Results;
@@ -111,7 +112,7 @@ namespace RegionExtractor
         public FunctionalFamily FromGraph2(string funFam)
         {
             // Run the query
-            var queryResults = client.Cypher
+            var queryResults = Client.Cypher
                 .Match("(a:FunFam {name: '" + funFam + "'})-[*]-(b)")
                 .Return((a, b) => new
                 {
@@ -122,7 +123,12 @@ namespace RegionExtractor
 
             // Typecast the internal classes to the public classes
             if (queryResults.Count() > 0){
-                FunctionalFamily toReturn = new FunctionalFamily(queryResults.ElementAt(0).funfam.Name, queryResults.ElementAt(0).funfam.Consensus, queryResults.ElementAt(0).funfam.Conserved);
+                FunctionalFamily toReturn = new FunctionalFamily(
+                    queryResults.ElementAt(0).funfam.Name, 
+                    queryResults.ElementAt(0).funfam.Consensus
+                );
+
+                // Get the kmers
                 string currentKmer;
                 foreach (var row in queryResults)
                 {
@@ -143,17 +149,17 @@ namespace RegionExtractor
         internal class F
         {
             // Private properties
-            private string conserved;
             private string consensus;
             private string name;
+            private string threshold;
 
             // getters and setters
             [JsonProperty("consensus")]
             public string Consensus { get => consensus; set => consensus = value; }
             [JsonProperty("name")]
             public string Name { get => name; set => name = value; }
-            [JsonProperty("conserved")]
-            public string Conserved { get => conserved; set => conserved = value; }
+            [JsonProperty("threshold")]
+            public string Threshold { get => threshold; set => threshold = value; }
         }
 
         // An internal class used to hold the Kmer node from the graph database

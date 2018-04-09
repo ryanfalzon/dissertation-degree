@@ -22,7 +22,7 @@ namespace RegionExtractor
         public Classifier()
         {
             this.funfams = new List<FunctionalFamily>();
-            
+
             // Initialize a database connection
             graphDatabase = new GraphDatabaseConnection();
             graphDatabase.Connect();
@@ -31,7 +31,7 @@ namespace RegionExtractor
             var result = graphDatabase.FromGraph1();
             foreach (var item in result)
             {
-                this.funfams.Add(new FunctionalFamily(item.Name, item.Consensus, item.Conserved));
+                this.funfams.Add(new FunctionalFamily(item.Name, item.Consensus));
             }
         }
 
@@ -39,7 +39,7 @@ namespace RegionExtractor
         public ComparisonResult Classify(string newSequence, int threshold1, int threshold2)
         {
             ComparisonResult compResult = new ComparisonResult(newSequence);
-            
+
             // Start stopwatch
             Stopwatch watch = new Stopwatch();
             watch.Start();
@@ -48,16 +48,17 @@ namespace RegionExtractor
                 seqeunce to shortlist the long list of functional familiex to a smaller one. These
                 shortlisted fdunctional families will then proceed for further analysis */
             List<Tuple<string, int, int>> furtherAnalysis = LevenshteinDistance(newSequence, threshold1);
+            Console.WriteLine();
 
             // Step 2 - Compare the kmers for the functional families that require further analyzing
             FunctionalFamily current;
             FunFamResult funfamResult;
-            foreach(Tuple<string, int, int> funfam in furtherAnalysis)
+            foreach (Tuple<string, int, int> funfam in furtherAnalysis)
             {
 
                 // Check if the current funfam is already stored locally
                 current = this.funfams.Where(ff => ff.Name.Equals(funfam.Item1)).ElementAt(0);
-                if(current.Kmers.Count == 0)
+                if (current.Kmers.Count == 0)
                 {
                     int index = funfams.IndexOf(current);
                     current = graphDatabase.FromGraph2(funfam.Item1);     // Get the functional family kmers from the graph database
@@ -75,20 +76,14 @@ namespace RegionExtractor
                         funfamResult.RegionX = funfam.Item2;
                         funfamResult.Length = funfam.Item3;
                         compResult.Results.Add(funfamResult);
-                        Console.WriteLine("New sequence is probably in this functional family.");
                     }
-                    else
-                    {
-                        Console.WriteLine("New sequence is probably not in this functional family.");
-                    }
-                    Console.WriteLine();
                 }
             }
 
             // Stop the stopwatch
             watch.Stop();
-            Console.WriteLine($"Total Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString("#.##")}");
-            Console.WriteLine("--------------------------------------------------------------------------------------------------------\n\n");
+            Console.WriteLine($"\n\nTotal Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString("#.##")}");
+            Console.WriteLine("-------------------------------------------------------------------------\n\n");
 
             // Return the result for this comparison
             compResult.TotalTime = watch.Elapsed.TotalMinutes.ToString("#.##");
@@ -99,31 +94,32 @@ namespace RegionExtractor
         private List<Tuple<string, int, int>> LevenshteinDistance(string newSequence, int threshold)
         {
             // List of regions to return for further analyzing
-            ConcurrentBag<FunctionalFamily> data = new ConcurrentBag<FunctionalFamily>(this.funfams);
-            ConcurrentBag<Tuple<string, int, int>> toReturn = new ConcurrentBag<Tuple<string, int, int>>();       // Holds the list of functional family names that require further analyzing
+            ConcurrentBag<FunctionalFamily> data = new ConcurrentBag<FunctionalFamily>(this.funfams);               // Holds all the functional families that the distance function will be applied on
+            ConcurrentBag<Tuple<string, int, int>> toReturn = new ConcurrentBag<Tuple<string, int, int>>();         // Holds the list of functional family names that require further analyzing
+            ConcurrentBag<string> distanceFunctionResults = new ConcurrentBag<string>();                            // Holds the results for the distance function
+            distanceFunctionResults.Add("Functional Family, Range, Similarity");
 
             // Calculate the Levenshtein Distance
             Parallel.ForEach(data, (funfam) =>
             {
-                Console.WriteLine($"Current Functional Family being Analyzed:\nName: {funfam.Name}\nConsensus Sequence: {funfam.ConservedRegion}\n");
+                Console.WriteLine($"Current Functional Family being Analyzed:\nName: {funfam.Name}\nConsensus Sequence: {funfam.ConsensusSequence}\n");
 
                 // Some temp variables
                 double temp = 0;
                 Tuple<double, int> max = Tuple.Create<double, int>(0, 0);
 
                 // Initialize the Levenshtein function
-                Levenshtein distanceFunction = new Levenshtein(funfam.ConservedRegion);
+                Levenshtein distanceFunction = new Levenshtein(funfam.ConsensusSequence);
 
                 // Get the kmers and calculate the Levenshtein distance
-                List<string> kmers = GenerateKmers(newSequence, funfam.ConservedRegion.Count());
-                //Console.WriteLine("Evaluating new sequences' kmers with the consensus sequence of current funfam...");
+                List<string> kmers = GenerateKmers(newSequence, funfam.ConsensusSequence.Count());
                 foreach (string kmer in kmers)
                 {
 
                     // Calculate the distance and overall similarity
+                    int gaps = NumberOfGaps(kmer);
                     temp = distanceFunction.Distance(kmer);
-                    temp = ((kmer.Count() - temp) / kmer.Count()) * 100;
-                    //Console.WriteLine($"{kmer} - {temp.ToString("#.##")}% Similar");
+                    temp = (((kmer.Count() - gaps) - temp) / (kmer.Count() - gaps)) * 100;
 
                     // Check if similarity is greater than threshold
                     if (temp >= max.Item1)
@@ -132,25 +128,62 @@ namespace RegionExtractor
                     }
                 }
 
+                // Add the result to the list to be transfered to a csv file
+                distanceFunctionResults.Add($"{funfam.Name}, {max.Item2}-{funfam.ConsensusSequence.Length}, {max.Item1}");
+
                 // Check if maximum similarity for current functional family exceeds the threshold
                 if (max.Item1 >= threshold)
                 {
-                    toReturn.Add(Tuple.Create<string, int, int>(funfam.Name, max.Item2, funfam.ConservedRegion.Length));
-                    //Console.WriteLine($"Functional Family {funfam.Name} has region starting at index {max.Item2} and \n{funfam.ConservedRegion.Length} characters long, {max.Item1}% similar and exceeds threshold.\n");
+                    toReturn.Add(Tuple.Create<string, int, int>(funfam.Name, max.Item2, funfam.ConsensusSequence.Length));
                 }
-                else
-                {
-                    //Console.WriteLine($"Functional Family {funfam.Name} does not have a region which exceeds similarity threshold.\n");
-                }
-
-                // Reset the variables
-                kmers.Clear();
-                temp = 0;
-                max = Tuple.Create<double, int>(0, 0);
             });
+
+            // Transfer the results of the distance function to a csv file
+            StoreResults(distanceFunctionResults.ToList());
 
             // Return the list
             return toReturn.ToList();
+        }
+
+        // Method to transfer results of distance function to a csv file
+        private void StoreResults(List<string> results)
+        {
+            // Join all the results
+            string allResults = "";
+            foreach (string result in results)
+            {
+                allResults += result + "\n";
+            }
+
+            // Create a directory
+            if (!System.IO.Directory.Exists(@"..\Results"))
+            {
+                System.IO.Directory.CreateDirectory(@"..\Results");
+            }
+
+            // Create a csv file
+            if (System.IO.File.Exists(@"..\Results\distanceFunctionResults.csv"))
+            {
+                System.IO.File.Delete(@"..\Results\distanceFunctionResults.csv");
+            }
+            System.IO.File.WriteAllText(@"..\Results\distanceFunctionResults.csv", allResults);
+        }
+
+        // Method to get the number of gaps in a sequence
+        private int NumberOfGaps(string sequence)
+        {
+            int gaps = 0;
+
+            // Iterate the whole sequence
+            foreach(char aminoacid in sequence)
+            {
+                if (aminoacid.Equals("-"))
+                {
+                    gaps++;
+                }
+            }
+
+            return gaps;
         }
 
         // A recursive method to output all the possible kmers of a particular size - RECURSIVE METHOD
@@ -190,12 +223,29 @@ namespace RegionExtractor
                 // Iterate all the kmers in the new sequence until the current kmer of the functional family has been found
                 while (counterNewSequence < newSequence.Count)
                 {
-                    if (newSequence[counterNewSequence].Equals(funfam.Kmers[counterFunfam]))
+                    // Check if kmers contains gaps
+                    if (funfam.Kmers[counterFunfam].Contains("-"))
                     {
-                        score++;
-                        break;
+                        // Compare individual amino-acids
+                        if((newSequence[counterNewSequence][0].Equals(funfam.Kmers[counterFunfam][0])) || 
+                            (newSequence[counterNewSequence][1].Equals(funfam.Kmers[counterFunfam][1])) ||
+                            (newSequence[counterNewSequence][2].Equals(funfam.Kmers[counterFunfam][2])))
+                        {
+                            score++;
+                            break;
+                        }
+                        counterNewSequence++;
                     }
-                    counterNewSequence++;
+                    else
+                    {
+                        // Check if the whole kmer is equal to the current new sequence kmers
+                        if (newSequence[counterNewSequence].Equals(funfam.Kmers[counterFunfam]))
+                        {
+                            score++;
+                            break;
+                        }
+                        counterNewSequence++;
+                    }
                 }
 
                 // Move onto the next kmer in the functional family
@@ -210,7 +260,6 @@ namespace RegionExtractor
 
             // Check if the percentage score exceeds the threshold set by the user
             scorePercentage = Convert.ToInt32(((score * 100) / funfam.Kmers.Count));
-            Console.WriteLine($"Percentage Score is {scorePercentage.ToString()}%");
             if (scorePercentage >= threshold)
             {
                 return new FunFamResult(funfam.Name, scorePercentage);    // This means that the new sequence is part of the functional family
