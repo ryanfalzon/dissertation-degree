@@ -44,6 +44,9 @@
     <Reference Include="Bio.Pamsam, Version=3.0.0.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\NetBio.Pamsam.3.0.1-alpha\lib\netstandard2.0\Bio.Pamsam.dll</HintPath>
     </Reference>
+    <Reference Include="EbiWS">
+      <HintPath>..\EbiWS.dll</HintPath>
+    </Reference>
     <Reference Include="Fastenshtein, Version=1.0.0.3, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Fastenshtein.1.0.0.4\lib\net40-client\Fastenshtein.dll</HintPath>
     </Reference>

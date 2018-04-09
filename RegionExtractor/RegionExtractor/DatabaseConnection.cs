@@ -76,12 +76,13 @@ namespace RegionExtractor
         {
             // Create a query
             MySqlCommand command = new MySqlCommand(("SELECT * FROM " + this.tableName + " ORDER BY functional_family ASC;"), connection);
+            List<DataRow> data = new List<DataRow>();
             try
             {
                 MySqlDataReader reader = command.ExecuteReader();
 
                 // Temp variables
-                List<DataRow> data = new List<DataRow>();
+                
                 string tempHeader = "";
                 string tempSequence;
                 string tempRegion;
@@ -111,7 +112,7 @@ namespace RegionExtractor
                 }
 
                 // Sort the list according to the functional family id
-                data = data.OrderBy(s => s.Functional_family).ToList();
+                data = data.OrderBy(s => s.FunctionalFamily).ToList();
                 return data;
             }
             catch(Exception e)

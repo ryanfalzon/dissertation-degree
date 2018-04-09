@@ -101,6 +101,8 @@ namespace RegionExtractor
             // List of regions to return for further analyzing
             ConcurrentBag<FunctionalFamily> data = new ConcurrentBag<FunctionalFamily>(this.funfams);
             ConcurrentBag<Tuple<string, int, int>> toReturn = new ConcurrentBag<Tuple<string, int, int>>();       // Holds the list of functional family names that require further analyzing
+            ConcurrentBag<string> results = new ConcurrentBag<string>();
+            results.Add("Functional Family, Range, Similarity");
 
             // Calculate the Levenshtein Distance
             Parallel.ForEach(data, (funfam) =>
@@ -132,6 +134,9 @@ namespace RegionExtractor
                     }
                 }
 
+                // Add the result to the list
+                results.Add($"{funfam.Name}, {max.Item2}-{funfam.ConservedRegion.Length}, {max.Item1}");
+
                 // Check if maximum similarity for current functional family exceeds the threshold
                 if (max.Item1 >= threshold)
                 {
@@ -149,6 +154,16 @@ namespace RegionExtractor
                 max = Tuple.Create<double, int>(0, 0);
             });
 
+            string tempString = "";
+            foreach(string s in results)
+            {
+                tempString += s + "\n";
+            }
+            if (System.IO.File.Exists("preResults.csv"))
+            {
+                System.IO.File.Delete("preResults.csv");
+            }
+            System.IO.File.WriteAllText("preResults.csv", tempString);
             // Return the list
             return toReturn.ToList();
         }
