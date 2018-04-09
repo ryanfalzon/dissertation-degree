@@ -145,6 +145,9 @@ namespace RegionExtractor
             Console.WriteLine($"Total Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString("#.##")}");
             Console.WriteLine("--------------------------------------------------------------------------------------------------------\n\n");
 
+            // Store the preporcessing results
+            StoreResults(preprocessingResult.ToList());
+
             // Return the result for this comparison
             result.TotalTime = watch.Elapsed.TotalMinutes.ToString("#.##");
             return result;
@@ -163,6 +166,31 @@ namespace RegionExtractor
             }
 
             return kmers;
+        }
+
+        // Store pre processing results
+        private void StoreResults(List<string> preprocessingResults)
+        {
+            Console.Write("Do you wish to store the processed data to text files? Y/N: ");
+            string storeData = Console.ReadLine();
+            if (storeData.Equals("Y"))
+            {
+                Console.WriteLine("\nWriting data to files. Please wait...");
+                // Combine all the results into one string
+                string temp = ""; 
+                foreach(string result in preprocessingResults)
+                {
+                    temp += $"{result}\n";
+                }
+
+                // Check if the files exist
+                if (System.IO.File.Exists("preprocessingResults.csv"))
+                {
+                    System.IO.File.Delete("preprocessingResults.csv");
+                }
+                System.IO.File.WriteAllText("preprocessingResults.csv", temp);
+                Console.WriteLine("Wrote To preprocessingResults.csv");
+            }
         }
     }
 }
