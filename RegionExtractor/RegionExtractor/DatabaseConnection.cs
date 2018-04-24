@@ -75,16 +75,13 @@ namespace RegionExtractor
         public List<DataRow> GetData()
         {
             // Create a query
-            MySqlCommand command = new MySqlCommand(($"SELECT * FROM {this.tableName} ORDER BY functional_family ASC;"), connection);
+            MySqlCommand command = new MySqlCommand(($"SELECT * FROM {this.tableName} ORDER BY functional_family DESC;"), connection);
             List<DataRow> data = new List<DataRow>();
             try
             {
                 MySqlDataReader reader = command.ExecuteReader();
 
                 // Temp variables
-                
-                string tempHeader = "";
-                string tempSequence;
                 string tempRegion;
                 int tempX;
                 int tempY;
@@ -92,23 +89,13 @@ namespace RegionExtractor
                 // Read the data
                 while (reader.Read())
                 {
-
-                    // Get sequence and check if it is null
-                    tempSequence = reader["full_sequence"].ToString();
-                    if (tempSequence != "")
-                    {
-                        tempHeader = tempSequence.Substring(0, tempSequence.IndexOf('\n'));
-                        tempSequence = tempSequence.Substring(tempSequence.IndexOf('\n') + 1);
-                        tempSequence = Regex.Replace(tempSequence, @"\t|\n|\r", "");
-                    }
-
                     // Get region and split it
                     tempRegion = reader["region"].ToString();
                     tempX = Convert.ToInt32(tempRegion.Split('-')[0]);
                     tempY = Convert.ToInt32(tempRegion.Split('-')[1]);
 
                     // Add data to the list
-                    data.Add(new DataRow(reader["protein_id"].ToString(), tempHeader, tempSequence, reader["functional_family"].ToString(), tempX, tempY));
+                    data.Add(new DataRow(reader["protein_id"].ToString(), reader["sequence_header"].ToString(), reader["full_sequence"].ToString(), reader["functional_family"].ToString(), tempX, tempY));
                 }
 
                 // Return the data

@@ -85,9 +85,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DataRow.cs" />
     <Compile Include="RegionAnalyzer.cs" />
+    <Compile Include="RegionCluster.cs" />
+    <Compile Include="Statistics.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="ClassDiagram1.cd" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -27,6 +28,7 @@ namespace RegionExtractor
             Console.WriteLine("1) Generate Regions");
             Console.WriteLine("2) Classify Protein Sequence");
             Console.WriteLine("3) Reset Graph Database");
+            Console.WriteLine("4) Generate Statistics");
             Console.Write("\nEnter Choice or X to Exit: ");
             choice = Console.ReadLine();
             CheckInput(choice);
@@ -71,16 +73,21 @@ namespace RegionExtractor
                         try
                         {
                             string textfile = System.IO.File.ReadAllText(file);
-                            textfile = textfile.Replace(System.Environment.NewLine, "");
-                            List<string> newSequences = textfile.Split(';').ToList();
+                            List<string> newSequences = textfile.Split('>').ToList();
                             newSequences = newSequences.Where(element => !string.IsNullOrEmpty(element)).ToList();
+                            for(int i = 0; i < newSequences.Count; i++)
+                            {
+                                int index = newSequences[i].IndexOf('\n');
+                                newSequences[i] = newSequences[i].Substring(index + 1);
+                                newSequences[i] = newSequences[i].Replace("\n", "");
+                            }
 
                             // Classsify new sequences
                             List<ComparisonResult> results = new List<ComparisonResult>();
                             Classifier classifier = new Classifier();
                             foreach (string newSequence in newSequences)
                             {
-                                results.Add(classifier.Classify(newSequence, Convert.ToInt32(thresholdDistanceFunction), Convert.ToInt32(thresholdKmerComparison)));
+                                results.Add(classifier.Classify("hello", newSequence, Convert.ToInt32(thresholdDistanceFunction), Convert.ToInt32(thresholdKmerComparison)));
                             }
 
                             // Ask the user if he wishes to save the results in a text file
@@ -88,28 +95,10 @@ namespace RegionExtractor
                             string store = Console.ReadLine();
                             if (store.Equals("Y"))
                             {
-                                Console.Write("Enter A Name For The Destination File: ");
-                                string resultsFile = Console.ReadLine();
-                                StringBuilder sb = new StringBuilder();
-                                foreach (ComparisonResult result in results)
+                                foreach(ComparisonResult result in results)
                                 {
-                                    sb.AppendLine(result.ToString());
+                                    result.ToFile();
                                 }
-
-                                // Create a directory
-                                if (!System.IO.Directory.Exists(@"..\Results"))
-                                {
-                                    System.IO.Directory.CreateDirectory(@"..\Results");
-                                }
-
-                                // Create a csv file
-                                if (System.IO.File.Exists(@"..\Results\" + resultsFile))
-                                {
-                                    // Delete the file
-                                    Console.WriteLine("File Already Exists. Removing Current Contents...");
-                                    System.IO.File.Delete(@"..\Results\" + resultsFile);
-                                }
-                                System.IO.File.WriteAllText(@"..\Results\" + resultsFile, sb.ToString());
                             }
 
                             Console.Write("Process Completed. Press Any Key To Continue...");
@@ -129,6 +118,25 @@ namespace RegionExtractor
                         GraphDatabaseConnection gdc = new GraphDatabaseConnection();
                         gdc.Connect();
                         gdc.Reset();
+                        break;
+                    }
+
+                case "4":
+                    {
+                        // Initialize a database connection
+                        db = new DatabaseConnection();
+
+                        // Check if connection was successful
+                        if (db.Connect(true))
+                        {
+                            data = db.GetData();
+                            if (db.Connect(false))
+                            {
+                                ra = new RegionAnalyzer(data);
+                                
+                                data.Clear();
+                            }
+                        }
                         break;
                     }
 

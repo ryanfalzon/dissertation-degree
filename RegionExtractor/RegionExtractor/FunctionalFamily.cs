@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,43 +9,49 @@ namespace RegionExtractor
 {
     class FunctionalFamily
     {
-        // Private properties
+        // Privaste properties
         private string name;
-        private string consensusSequence;
-        private List<string> kmers;
+        private int numberOfSequences;
+        private int numberOfClusters;
+        private List<RegionCluster> clusters;
+        private Statistics statistics;
 
         // Getters and setters
+        [JsonProperty("name")]
         public string Name { get => name; set => name = value; }
-        public string ConsensusSequence { get => consensusSequence; set => consensusSequence = value; }
-        internal List<string> Kmers { get => kmers; set => kmers = value; }
+        [JsonProperty("numberOfSequence")]
+        public int NumberOfSequences { get => numberOfSequences; set => numberOfSequences = value; }
+        internal List<RegionCluster> Clusters { get => clusters; set => clusters = value; }
+        internal Statistics Statistics { get => statistics; set => statistics = value; }
+        [JsonProperty("numberOfClusters")]
+        public int NumberOfClusters { get => numberOfClusters; set => numberOfClusters = value; }
 
         // Constructor 1
         public FunctionalFamily()
         {
-            this.kmers = new List<string>();
+            this.clusters = new List<RegionCluster>();
         }
 
         // Constructor 2
         public FunctionalFamily(string name)
         {
             this.name = name;
-            this.kmers = new List<string>();
+            this.clusters = new List<RegionCluster>();
         }
 
         // Constructor 3
-        public FunctionalFamily(string name, string consensusSequence)
+        public FunctionalFamily(string name, int numberOfSequences, int numberOfClusters)
         {
             this.name = name;
-            this.consensusSequence = consensusSequence;
-            this.kmers = new List<string>();
+            this.numberOfSequences = numberOfSequences;
+            this.numberOfClusters = numberOfClusters;
+            this.clusters = new List<RegionCluster>();
         }
-        
-        // Constructor 4
-        public FunctionalFamily(string name, string consensusSequence, List<string> kmers)
+
+        // Method to turn object to a string for graph database
+        public override string ToString()
         {
-            this.name = name;
-            this.consensusSequence = consensusSequence;
-            this.kmers = kmers;
+            return $"(f:FunFam {{name: \"{this.name}\", numberOfSequence: \"{this.numberOfSequences}\", numberOfClusters: \"{this.numberOfClusters}\"}})";
         }
     }
 }
