@@ -170,7 +170,7 @@ namespace RegionExtractor
 
                                         // Generate kmers and add them to aan object
                                         RegionCluster cluster = new RegionCluster(
-                                            $"{functionalFamily.Name}/{(char)(clusteredRegionsCount + 65)}",
+                                            $"{functionalFamily.Name} - {functionalFamily.Clusters.Count}",
                                             consensus,
                                             clusteredRegions[clusteredRegionsCount].Count.ToString(),
                                             GenerateKmers(consensus, 3));
@@ -206,13 +206,18 @@ namespace RegionExtractor
                 }
 
                 // Store the current functional family in the graph database
-                if(functionalFamily.Clusters.Count > 0)
+                if (functionalFamily.Clusters.Count > 0)
                 {
                     functionalFamily.NumberOfClusters = functionalFamily.Clusters.Count;
-                    GraphDatabaseConnection gdc = new GraphDatabaseConnection("bolt://localhost", "neo4j", "finaldata");
+                    GraphDatabaseConnection gdc = new GraphDatabaseConnection("bolt://localhost", "neo4j", "fypryan");
                     gdc.Connect();
                     gdc.ToGraph(functionalFamily);
                     gdc.Disconnect();
+
+                    /*foreach (RegionCluster cluster in functionalFamily.Clusters)
+                    {
+                        Console.WriteLine($"{cluster.Name } - {cluster.ConsensusSequence }");
+                    }*/
                 }
 
                 // Add the logs to the lists
@@ -226,7 +231,7 @@ namespace RegionExtractor
             watch.Stop();
             Console.WriteLine($"\nTotal Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString()} minutes");
 
-            // Check if the suer wishes to save the processed data to text files
+            // Check if the user wishes to save the processed data to text files
             Console.Write("Do you wish to store the processed data to text files? Y/N: ");
             string storeData = Console.ReadLine();
             if (storeData.Equals("Y"))
@@ -330,9 +335,7 @@ namespace RegionExtractor
             for (int i = 0; i < aligner.AlignedSequences.Count; ++i)
             {
                 alignedRegions.Add(new string(aligner.AlignedSequences[i].Select(a => (char)a).ToArray()));
-                Console.WriteLine(alignedRegions[i]);
             }
-            Console.WriteLine();
             return alignedRegions;
         }
 
@@ -366,7 +369,6 @@ namespace RegionExtractor
 
             // Replace 'X' symbol in consensus sequence with gaps and return the consensus
             consensus = consensus.Replace('X', '-');
-            Console.WriteLine(consensus + "\n\n\n");
             return consensus;
         }
 
@@ -461,20 +463,20 @@ namespace RegionExtractor
             for(int i = 0; i < consensus.Length; i++)
             {
                 // Check if current is the first letter
-                if(i == 0)
+                if (i == 0)
                 {
                     // Check two characters in front
-                    if(!(consensus[i + 1] == '-') && !(consensus[i + 2] == '-'))
+                    if ((consensus[i] != '-') || ((consensus[i + 1] != '-') || (consensus[i + 2] != '-')))
                     {
                         noGaps += consensus[i];
                     }
                 }
 
                 // Check if current is the last letter
-                else if(i == (consensus.Length - 1))
+                else if (i == (consensus.Length - 1))
                 {
                     // Check two characters before
-                    if(!(consensus[i - 1] == '-') && !(consensus[i - 2] == '-'))
+                    if ((consensus[i] != '-') || ((consensus[i - 1] != '-') || (consensus[i - 2] != '-')))
                     {
                         noGaps += consensus[i];
                     }
@@ -484,7 +486,7 @@ namespace RegionExtractor
                 else
                 {
                     // Check one character in front and before
-                    if(!(consensus[i - 1] == '-') && !(consensus[i + 1] == '-'))
+                    if ((consensus[i - 1] != '-') || ((consensus[i] != '-') || (consensus[i + 1] != '-')))
                     {
                         noGaps += consensus[i];
                     }
@@ -503,7 +505,13 @@ namespace RegionExtractor
             // Create the kmers
             for(int i = 0; i <= (sequence.Length - kmerLength); i++)
             {
-                kmers.Add(sequence.Substring(i, kmerLength));
+                string kmer = sequence.Substring(i, kmerLength);
+
+                // Check i fkmer is composed of only gaps
+                if (!kmer.Equals("---"))
+                {
+                    kmers.Add(sequence.Substring(i, kmerLength));
+                }
             }
             
             return kmers;
