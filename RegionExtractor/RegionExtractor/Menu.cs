@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -66,45 +67,30 @@ namespace RegionExtractor
                         string file = Console.ReadLine();
                         Console.Write("Enter Threshold For Distance Function: ");
                         string thresholdDistanceFunction = Console.ReadLine();
-                        Console.Write("Enter Threshold For Kmer Comparison: ");
-                        string thresholdKmerComparison = Console.ReadLine();
 
                         // Get individual sequences from the text file contents
                         try
                         {
+                            Console.WriteLine("\nReading Text File...");
                             string textfile = System.IO.File.ReadAllText(file);
-                            List<string> newSequences = textfile.Split('>').ToList();
-                            newSequences = newSequences.Where(element => !string.IsNullOrEmpty(element)).ToList();
-                            for(int i = 0; i < newSequences.Count; i++)
+                            List<string[]> newSequences = new List<string[]>();
+                            List<string> sequences = textfile.Split('>').ToList();
+                            sequences = sequences.Where(element => !string.IsNullOrEmpty(element)).ToList();
+                            for (int i = 0; i < sequences.Count; i++)
                             {
-                                int index = newSequences[i].IndexOf('\n');
-                                newSequences[i] = newSequences[i].Substring(index + 1);
-                                newSequences[i] = newSequences[i].Replace("\n", "");
+                                int index = sequences[i].IndexOf('\n');
+                                string header = sequences[i].Substring(0, index).Replace("\r", "").Replace("|", "-");
+                                string sequence = sequences[i].Substring(index + 1).Replace("\n", "").Replace("\r", "");
+                                newSequences.Add(new string[] { header, sequence });
                             }
+                            Console.WriteLine($"{newSequences.Count} Sequences Read\n");
 
                             // Classsify new sequences
                             List<ComparisonResult> results = new List<ComparisonResult>();
-                            Classifier classifier = new Classifier();
-                            foreach (string newSequence in newSequences)
-                            {
-                                results.Add(classifier.Classify("hello", newSequence, Convert.ToInt32(thresholdDistanceFunction), Convert.ToInt32(thresholdKmerComparison)));
-                            }
-
-                            // Ask the user if he wishes to save the results in a text file
-                            Console.Write("\nWould You Like To Save Final Results? Y/N: ");
-                            string store = Console.ReadLine();
-                            if (store.Equals("Y"))
-                            {
-                                foreach(ComparisonResult result in results)
-                                {
-                                    result.ToFile();
-                                }
-                            }
-
-                            Console.Write("Process Completed. Press Any Key To Continue...");
-                            Console.ReadLine();
+                            Classifier classifier = new Classifier(Convert.ToInt32(thresholdDistanceFunction));
+                            classifier.FunFamPrediction(new ConcurrentBag<string[]>(newSequences));
                         }
-                        catch(Exception e)
+                        catch (Exception e)
                         {
                             Console.WriteLine("\nError While Reading Text File");
                             Console.Write("Press Any key To Continue...");
@@ -133,7 +119,7 @@ namespace RegionExtractor
                             if (db.Connect(false))
                             {
                                 ra = new RegionAnalyzer(data);
-                                
+
                                 data.Clear();
                             }
                         }

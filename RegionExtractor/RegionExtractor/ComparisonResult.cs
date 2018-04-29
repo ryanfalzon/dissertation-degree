@@ -33,7 +33,7 @@ namespace RegionExtractor
         {
             // Join all the results
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Functional Family, Cluster, Starting Index, Length, Levenshtein Distance Similarity, K-mer Similarity, Further Comparison");
+            sb.AppendLine("Functional Family Name, Sequences in Functional Family, Cluster Name, Sequences in Cluster, Levenshtein Similarity, Region (START -> LENGTH), Further Comparison, Reverse Comparison, K-Mer Similarity");
             foreach (FunFamResult result in results)
             {
                 sb.AppendLine(result.ToString());

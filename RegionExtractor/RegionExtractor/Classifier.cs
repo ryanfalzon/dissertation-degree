@@ -6,83 +6,116 @@ using System.Threading.Tasks;
 using Fastenshtein;
 using System.Diagnostics;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace RegionExtractor
 {
     class Classifier
     {
         // Private properties
-        GraphDatabaseConnection graphDatabase;
-        dynamic funfams;
+        private int threshold;
 
         // Constructor
-        public Classifier()
+        public Classifier(int threshold)
+        {
+            this.threshold = threshold;
+        }
+
+        // A method to classify the passed sequences
+        public void FunFamPrediction(ConcurrentBag<string[]> newSequences)
         {
             // Initialize a database connection
-            graphDatabase = new GraphDatabaseConnection();
+            GraphDatabaseConnection graphDatabase = new GraphDatabaseConnection("bolt://localhost", "neo4j", "fypryan");
             graphDatabase.Connect();
 
             // Get a list of all functional families and their consensus seqeunce
-            this.funfams = graphDatabase.FromGraph1();
-            
-        }
+            ConcurrentBag<dynamic> nodes = new ConcurrentBag<dynamic>(graphDatabase.GetClusters());
+            graphDatabase.Disconnect();
 
-        // A method to classify a new sequence
-        public ComparisonResult Classify(string sequenceHeader, string newSequence, int threshold1, int threshold2)
-        {
-            ComparisonResult compResult = new ComparisonResult(sequenceHeader, newSequence);
+            // A list that holds the results of all new sequences
+            ConcurrentBag<ComparisonResult> results = new ConcurrentBag<ComparisonResult>();
 
             // Start stopwatch
             Stopwatch watch = new Stopwatch();
             watch.Start();
 
+            // Shortlist the functional families for each new sequence - USING THREADING
+            /*int counter = 0;
+            Parallel.ForEach(newSequences, (newSequence) =>
+            {
+                Interlocked.Increment(ref counter);
+                Console.WriteLine($"{counter}/{newSequences.Count()} - {newSequence[1]}");
+                results.Add(Classify(nodes, newSequence[0], newSequence[1]));
+            });*/
+            int counter = 0;
+            foreach(string[] newSequence in newSequences)
+            {
+                counter++;
+                Console.WriteLine($"{counter}/{newSequences.Count()} - {newSequence[0]}");
+                results.Add(Classify(nodes, newSequence[0], newSequence[1]));
+            }
+
+            // Stop the stopwatch
+            watch.Stop();
+            Console.WriteLine($"\n\nTotal Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString("#.##")}");
+            Console.WriteLine("-------------------------------------------------------------------------\n\n");
+
+            // Ask the user if he wishes to save the results in a text file
+            Console.Write("\nWould You Like To Save Final Results? Y/N: ");
+            string store = Console.ReadLine();
+            if (store.Equals("Y"))
+            {
+                foreach (ComparisonResult result in results)
+                {
+                    result.ToFile();
+                }
+            }
+
+            Console.Write("Process Completed. Press Any Key To Continue...");
+            Console.ReadLine();
+        }
+
+        // A method to classify a new sequence
+        private ComparisonResult Classify(ConcurrentBag<dynamic> nodes, string sequenceHeader, string newSequence)
+        {
+            // Variable that will hold 
+            ComparisonResult compResult = new ComparisonResult(sequenceHeader, newSequence);
+
             /*  Step 1 - Calculate the Levenshtein Distance for each functional family's consensus
                 seqeunce to shortlist the long list of functional familiex to a smaller one. These
                 shortlisted fdunctional families will then proceed for further analysis */
-            compResult.Results = LevenshteinDistance(newSequence, threshold1);
-            Console.WriteLine();
+            compResult.Results = LevenshteinDistance(nodes, newSequence, this.threshold);
 
             // Step 2 - Compare the kmers for the functional families that require further analyzing
-            for(int i = 0; i < compResult.Results.Count; i++)
+            for (int i = 0; i < compResult.Results.Count; i++)
             {
                 // Check if current result requires further analysis
                 if (compResult.Results[i].FurtherComparison)
                 {
-                    /*// Check if the current funfam is already stored locally
-                    FunctionalFamily current = this.funfams.Where(ff => ff.Name.Equals(compResult.Results[i].FunctionalFamily)).ElementAt(0);
-                    if (current.Clusters[compResult.Results[i].Cluster].Kmers.Count == 0)
-                    {
-                        int index = funfams.IndexOf(current);
-                        funfams[index] = graphDatabase.FromGraph2(current);
-                    }*/
-                    List<string> kmers = graphDatabase.FromGraph2(compResult.Results[i].Cluster);
+                    // Get k-mers for current cluster
+                    GraphDatabaseConnection gdc = new GraphDatabaseConnection("bolt://localhost", "neo4j", "fypryan");
+                    gdc.Connect();
+                    var kmers = gdc.GetKmers(compResult.Results[i].Cluster);
+                    gdc.Disconnect();
 
-                    // Check if the functional family has any kmers
-                    if(kmers.Count > 0)
-                    //if (current.Clusters[compResult.Results[i].Cluster].Kmers.Count > 0)
+                    // Check the amount of kmers that were returned
+                    if (kmers.Count > 0)
                     {
-                        Console.WriteLine($"Further Analysis of FunctionalFamily: {compResult.Results[i].FunctionalFamily} Cluster: {compResult.Results[i].Cluster}");
-                        
-                        // Check if current functional family requires reverse comparison
+                        // Check if current functional family requires reverse comparison (Consensus sequence is longer than anew sequence)
                         if (compResult.Results[i].ReverseComparison)
                         {
                             // Get the region that is most similar to the new sequence
-                            
                             compResult.Results[i].SimilarityKmer = CompareKmers(
-                                //GenerateKmers(current.Clusters[compResult.Results[i].Cluster].ConsensusSequence.Substring(compResult.Results[i].RegionX, compResult.Results[i].Length), 3),
                                 GenerateKmers(compResult.Results[i].Consensus.Substring(compResult.Results[i].RegionX, compResult.Results[i].Length), 3),
-                                GenerateKmers(newSequence, 3),
-                                threshold2);
+                                GenerateKmers(newSequence, 3));
                             compResult.Results[i].RegionX = 0;
                             compResult.Results[i].Length = compResult.NewSequence.Length;
                         }
                         else
                         {
                             compResult.Results[i].SimilarityKmer = CompareKmers(
-                                //current.Clusters[compResult.Results[i].Cluster].Kmers,
                                 kmers,
-                                GenerateKmers(newSequence.Substring(compResult.Results[i].RegionX, compResult.Results[i].Length), 3),
-                                threshold2);
+                                GenerateKmers(newSequence.Substring(compResult.Results[i].RegionX, compResult.Results[i].Length), 3));
                         }
                     }
 
@@ -91,130 +124,91 @@ namespace RegionExtractor
                 }
             }
 
-            // Stop the stopwatch
-            watch.Stop();
-            Console.WriteLine($"\n\nTotal Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString("#.##")}");
-            Console.WriteLine("-------------------------------------------------------------------------\n\n");
-
             // Return the result for this comparison
-            compResult.TotalTime = watch.Elapsed.TotalMinutes.ToString("#.##");
             return compResult;
         }
 
         // A method that will take a list of strings and a new string and will give the Levenshtein Distance for the strings
-        private List<FunFamResult> LevenshteinDistance(string newSequence, int threshold)
+        private List<FunFamResult> LevenshteinDistance(ConcurrentBag<dynamic> nodes, string newSequence, int threshold)
         {
-            // List of regions to return for further analyzing
-            ConcurrentBag<dynamic> data = new ConcurrentBag<dynamic>(this.funfams);
+            // A variable that will hold the results generated
             ConcurrentBag<FunFamResult> results = new ConcurrentBag<FunFamResult>();
 
-            // Calculate the Levenshtein Distance
-            Parallel.ForEach(data, (funfam) =>
+            // Iterating over all clusters in the functional families
+            Parallel.ForEach(nodes, (node) =>
             {
-                Console.WriteLine($"Current Functional Family being Analyzed:\nName: {funfam.functionalfamily.Name}\nNumber of Clusters: {funfam.functionalfamily.NumberOfClusters}\n\n");
+                // Variable that will hold the result
+                FunFamResult result = new FunFamResult(node.functionalfamily.Name, Convert.ToInt32(node.functionalfamily.NumberOfSequences), node.cluster.Name, Convert.ToInt32(node.cluster.NumberOfSequences), node.cluster.ConsensusSequence);
 
-                // Iterate over all the clusters
-                /*foreach (RegionCluster cluster in funfam.Clusters)
-                {*/
-                //FunFamResult result = new FunFamResult(funfam.functionalfamily.Name, funfam.functionalfamily.Clusters.IndexOf(cluster));
-                FunFamResult result = new FunFamResult(funfam.functionalfamily.Name, funfam.cluster.ConsensusSequence, funfam.cluster.Name);
+                // Strings that will be compared
+                string source;
+                List<Kmer> target;
 
-                if (funfam.cluster.Name.Equals("1.10.1300.10.FF1262/a"))
+                // Check length of functional family consensus
+                if (result.Consensus.Length <= newSequence.Length)
                 {
-                    Console.WriteLine();
+                    source = result.Consensus;
+                    target = GenerateKmers(newSequence, source.Length);
+                }
+                else
+                {
+                    source = newSequence;
+                    target = GenerateKmers(result.Consensus, source.Length);
+                    result.ReverseComparison = true;
                 }
 
-                    // Some temp variables
-                    List<string> kmers;
-                    string source = "";
-                    string target = "";
+                // Calculate levenshtein string distance between the source and the target
+                Levenshtein distanceFunction = new Levenshtein(source);
+                int gaps = NumberOfGaps(result.Consensus);
+                int maxLength = source.Length;
 
-                    // Check if the consensus sequence is longer than the new sequence
-                    if (funfam.cluster.ConsensusSequence.Length == newSequence.Length)
+                // Iterate over all k-mers in the target
+                foreach (Kmer kmer in target)
+                {
+                    // Calculate number of gaps if reverse comparison is true
+                    if (result.ReverseComparison)
                     {
-                        // Set the source and target strings
-                        source = funfam.cluster.ConsensusSequence;
-                        target = newSequence;
+                        gaps = NumberOfGaps(kmer.Sequence);
 
-                        // The new sequence is the only k-mer in this case
-                        kmers = new List<string>();
-                        kmers.Add(target);
-                    }
-                    else if (funfam.cluster.ConsensusSequence.Length > newSequence.Length)
-                    {
-                        // Set the source and target strings
-                        source = newSequence;
-                        target = funfam.cluster.ConsensusSequence;
-                        result.ReverseComparison = true;
-
-                        // Get k-mers of size 'new sequence' of consensus sequence
-                        kmers = GenerateKmers(target, source.Length);
-                    }
-                    else
-                    {
-                        // Set the source and target strings
-                        source = funfam.cluster.ConsensusSequence;
-                        target = newSequence;
-
-                        // Get k-mers of size 'new sequence' of consensus sequence
-                        kmers = GenerateKmers(target, source.Length);
-                    }
-
-                    // Initialize the Levenshtein function
-                    Levenshtein distanceFunction = new Levenshtein(source);
-
-                    // Calculate the levenshtein string distance
-                    int gaps = NumberOfGaps(funfam.cluster.ConsensusSequence);
-                    int maxLength = source.Length;
-
-                    // Iterate over all k-mers and find the most similar k-mer
-                    foreach (string kmer in kmers)
-                    {
-                        // Calculate the number of gaps if reverse comparison
-                        if (result.ReverseComparison)
+                        // Check if calculated gaps are proportionally placed
+                        if (gaps >= (kmer.Sequence.Length / 2))
                         {
-                            gaps = NumberOfGaps(kmer);
-
-                            // Check if current k-mers gaps are proportionally placed
-                            if (gaps >= (kmer.Length / 2))
-                            {
-                                break;
-                            }
-                        }
-
-                        // Calculate the distance and overall similarity
-                        double similarity = distanceFunction.Distance(kmer);
-                        double percentage = ((maxLength - (similarity - gaps)) / maxLength) * 100;
-
-                        // Check if current percentage is greater than the current maximum percentage
-                        if (percentage >= result.SimilarityLevenshtein)
-                        {
-                            result.SimilarityLevenshtein = Convert.ToInt32(percentage);
-                            result.RegionX = kmers.IndexOf(kmer);
+                            break;
                         }
                     }
 
-                    // If most similar region exceed threshold flag for further analysis
-                    if (result.SimilarityLevenshtein >= threshold)
+                    // Calculate the distance and overall similarity
+                    double similarity = distanceFunction.Distance(kmer.Sequence);
+                    double percentage = ((maxLength - (similarity - gaps)) / maxLength) * 100;
+
+                    // Check if further analysis is required
+                    if (percentage >= result.SimilarityLevenshtein)
                     {
-                        result.FurtherComparison = true;
-                        result.Length = maxLength;
+                        result.SimilarityLevenshtein = Convert.ToInt32(percentage);
+                        result.RegionX = target.IndexOf(kmer);
                     }
-                    results.Add(result);
-                //}
+                }
+
+                // If most similar region exeeds threshold, flag for further analysis
+                if (result.SimilarityLevenshtein >= threshold)
+                {
+                    result.FurtherComparison = true;
+                    result.Length = maxLength;
+                }
+                results.Add(result);
             });
 
-            // Return the list
+            // Return the results
             return results.ToList();
         }
-        
+
         // Method to get the number of gaps in a sequence
         private int NumberOfGaps(string sequence)
         {
             int gaps = 0;
 
             // Iterate the whole sequence
-            foreach(char aminoacid in sequence)
+            foreach (char aminoacid in sequence)
             {
                 if (aminoacid == '-')
                 {
@@ -225,23 +219,23 @@ namespace RegionExtractor
             return gaps;
         }
 
-        // A recursive method to output all the possible kmers of a particular size - RECURSIVE METHOD
-        private List<string> GenerateKmers(string sequence, int length)
+        // A method to output all kmers of a passed length of the passeed string
+        private List<Kmer> GenerateKmers(string sequence, int length)
         {
             // Some temp variables
-            List<string> kmers = new List<string>();
+            List<Kmer> kmers = new List<Kmer>();
 
             // Create the kmers
             for (int i = 0; i <= (sequence.Count() - length); i++)
             {
-                kmers.Add(sequence.Substring(i, length));
+                kmers.Add(new Kmer(i.ToString(), sequence.Substring(i, length)));
             }
 
             return kmers;
         }
 
         // A method that will compare a list of kmers with another
-        private int CompareKmers(List<string> sourceKmers, List<string> targetKmers, int threshold)
+        private int CompareKmers(dynamic sourceKmers, dynamic targetKmers)
         {
             // Temp variables
             int score = 0;
@@ -262,16 +256,16 @@ namespace RegionExtractor
                     while (counterNewSequence < targetKmers.Count)
                     {
                         // Check if kmers contains gaps
-                        if (sourceKmers[counterFunfam].Contains("-"))
+                        if (sourceKmers[counterFunfam].Sequence.Contains("-"))
                         {
                             // Compare individual amino-acids
                             bool same = true;
                             int counter = 0;
-                            foreach (char aminoacid in sourceKmers[counterFunfam])
+                            foreach (char aminoacid in sourceKmers[counterFunfam].Sequence)
                             {
                                 if (!aminoacid.Equals('-'))
                                 {
-                                    if (!aminoacid.Equals(targetKmers[counterNewSequence][counter]))
+                                    if (!aminoacid.Equals(targetKmers[counterNewSequence].Sequence[counter]))
                                     {
                                         same = false;
                                     }
@@ -290,7 +284,7 @@ namespace RegionExtractor
                         else
                         {
                             // Check if the whole kmer is equal to the current new sequence kmers
-                            if (targetKmers[counterNewSequence].Equals(sourceKmers[counterFunfam]))
+                            if (targetKmers[counterNewSequence].Sequence.Equals(sourceKmers[counterFunfam].Sequence))
                             {
                                 score++;
                                 break;

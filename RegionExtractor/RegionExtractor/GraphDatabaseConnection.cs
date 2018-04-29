@@ -7,14 +7,15 @@ using Neo4j.Driver.V1;
 using Neo4jClient.Cypher;
 using Neo4jClient;
 using Newtonsoft.Json;
+using System.Net.Http;
 
 namespace RegionExtractor
 {
     internal class GraphDatabaseConnection
     {
         // Properties
-        private string db;              // bolt://localhost
-        private string dbUsername;      // neo4j
+        private string db;
+        private string dbUsername;
         private string dbPassword;
         private GraphClient client;
 
@@ -49,7 +50,7 @@ namespace RegionExtractor
         public void Connect()
         {
             // Create a new client and connect to the database
-            this.client = new GraphClient(new Uri("http://localhost:7474/db/data"), this.dbUsername, this.dbPassword);
+            this.client = new GraphClient(new Uri("http://localhost:7474/db/data"), new HttpClientWrapper(this.dbUsername, this.dbPassword, new HttpClient() { Timeout = TimeSpan.FromMinutes(20) }));
             this.client.Connect();
         }
 
@@ -81,54 +82,18 @@ namespace RegionExtractor
             // Create the cluster and kmer nodes for each cluster and assign them to the functional family
             foreach (RegionCluster cluster in funfam.Clusters)
             {
+                // Run the query
                 this.client.Cypher
                     .Match($"(f:FunFam {{name:\"{funfam.Name}\"}})")
                     .Create("(f)-[:CONTAINS]->" + cluster.ToString())
                     .ExecuteWithoutResults();
             }
+            Console.WriteLine($"Functional Family {funfam.Name} Successfully Written To Graph");
         }
 
         // Method to retrieve all funfam nodes from the graph database
-        public dynamic FromGraph1()
+        public dynamic GetClusters()
         {
-            List<FunctionalFamily> funfams = new List<FunctionalFamily>();
-
-            /*// First get the functional families
-            var funfamQuery = this.client.Cypher
-                .Match("(a:FunFam)")
-                .Return(a => a.As<FunctionalFamily>())
-                .Results;
-
-            // Typecast internal classes to the public classes
-            if (funfamQuery.Count() > 0)
-            {
-                // Get the clusters
-                foreach (var row1 in funfamQuery)
-                {
-                    FunctionalFamily funfam = new FunctionalFamily(row1.Name, Convert.ToInt32(row1.NumberOfSequences), Convert.ToInt32(row1.NumberOfClusters));
-                    Console.WriteLine(row1.Name);
-
-                    // Run cluster query
-                    var clusterQuery = this.client.Cypher
-                        .Match($"(c:Cluster)--(d:FunFam {{name:\"{row1.Name}\"}})")
-                        .Return(c => c.As<C>())
-                        .Results;
-
-                    // Typecast intermal classes to the public classes
-                    if (clusterQuery.Count() > 0)
-                    {
-                        // Save the clusters
-                        foreach (var row2 in clusterQuery)
-                        {
-                            funfam.Clusters.Add(new RegionCluster(row2.Name, row2.Consensus, Convert.ToInt32(row2.NumberOfSequences), Convert.ToInt32(row2.NumberOfKmers)));
-                        }
-                    }
-
-                    funfams.Add(funfam);
-                }
-                Console.WriteLine();
-            }*/
-
             // Run the query
             var funfamQuery = this.client.Cypher
                 .Match("(a:Cluster)--(b:FunFam)")
@@ -143,87 +108,15 @@ namespace RegionExtractor
         }
 
         // Method to retrieve the passed functional family from the graph database
-        public List<string> FromGraph2(string cluster)
+        public dynamic GetKmers(string cluster)
         {
-            // Get the clusters
-            /*foreach (RegionCluster cluster in functionalFamily.Clusters)
-            {*/
-                // Get the kmers
-                var kmerQuery = this.client.Cypher
-                    .Match($"(c:Kmer)--(d:Cluster {{name:\"{cluster}\"}})")
-                    .Return(c => new
-                    {
-                        kmer = c.As<K>()
-                    })
-                    .Results;
+            // Get the kmers
+            var kmerQuery = this.client.Cypher
+                .Match($"(c:Cluster {{name:\"{cluster}\"}})-[*]-(d:Kmer)")
+                .Return(d => d.As<Kmer>())
+                .Results;
 
-            // Typecase internal class to the public classes
-            List<string> kmers = new List<string>();
-            if (kmerQuery.Count() > 0)
-                {
-                    
-
-                    // Get the kmers
-                    foreach (var row in kmerQuery)
-                    {
-                        kmers.Add(row.kmer.Sequence);
-                    }
-
-                    //functionalFamily.Clusters.ElementAt(functionalFamily.Clusters.IndexOf(cluster)).Kmers = kmers;
-                }
-            //}
-            return kmers;
-        }
-
-        // An internal class used to hold the FunFam node from the graph database
-        internal class F
-        {
-            // Private properties
-            private string name;
-            private string numberOfSequences;
-            private string numberOfClusters;
-
-            // Getters and setters
-            [JsonProperty("name")]
-            public string Name { get => name; set => name = value; }
-            [JsonProperty("numberOfSequence")]
-            public string NumberOfSequences { get => numberOfSequences; set => numberOfSequences = value; }
-            [JsonProperty("numberOfClusters")]
-            public string NumberOfClusters { get => numberOfClusters; set => numberOfClusters = value; }
-        }
-
-        // An internal class used to hold the Cluster node from the graph database
-        internal class C
-        {
-            // Private properties
-            private string name;
-            private string consensus;
-            private string numberOfSequences;
-            private string numberOfKmers;
-
-            // Getters and setters
-            [JsonProperty("consensus")]
-            public string Consensus { get => consensus; set => consensus = value; }
-            [JsonProperty("numberOfSequence")]
-            public string NumberOfSequences { get => numberOfSequences; set => numberOfSequences = value; }
-            [JsonProperty("numberOfKmers")]
-            public string NumberOfKmers { get => numberOfKmers; set => numberOfKmers = value; }
-            [JsonProperty("name")]
-            public string Name { get => name; set => name = value; }
-        }
-
-        // An internal class used to hold the Kmer node from the graph database
-        internal class K
-        {
-            // Private properties
-            private string index;
-            private string sequence;
-
-            // Getters and setters
-            [JsonProperty("index")]
-            public string Index { get => index; set => index = value; }
-            [JsonProperty("sequence")]
-            public string Sequence { get => sequence; set => sequence = value; }
+            return kmerQuery;
         }
     }
 }
