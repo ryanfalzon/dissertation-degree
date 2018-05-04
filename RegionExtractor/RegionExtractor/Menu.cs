@@ -29,7 +29,6 @@ namespace RegionExtractor
             Console.WriteLine("1) Generate Regions");
             Console.WriteLine("2) Classify Protein Sequence");
             Console.WriteLine("3) Reset Graph Database");
-            Console.WriteLine("4) Generate Statistics");
             Console.Write("\nEnter Choice or X to Exit: ");
             choice = Console.ReadLine();
             CheckInput(choice);
@@ -53,7 +52,12 @@ namespace RegionExtractor
                             data = db.GetData();
                             if (db.Connect(false))
                             {
-                                ra = new RegionAnalyzer(data);
+                                // Get the k-mer size
+                                Console.Write("\nEnter k-mer size: ");
+                                string kmerSize = Console.ReadLine();
+
+                                // Analyze the regions
+                                ra = new RegionAnalyzer(data, Convert.ToInt32(kmerSize));
                                 ra.Analyze();
                                 data.Clear();
                             }
@@ -104,25 +108,6 @@ namespace RegionExtractor
                         GraphDatabaseConnection gdc = new GraphDatabaseConnection();
                         gdc.Connect();
                         gdc.Reset();
-                        break;
-                    }
-
-                case "4":
-                    {
-                        // Initialize a database connection
-                        db = new DatabaseConnection();
-
-                        // Check if connection was successful
-                        if (db.Connect(true))
-                        {
-                            data = db.GetData();
-                            if (db.Connect(false))
-                            {
-                                ra = new RegionAnalyzer(data);
-
-                                data.Clear();
-                            }
-                        }
                         break;
                     }
 

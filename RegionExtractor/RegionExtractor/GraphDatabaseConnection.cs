@@ -50,7 +50,7 @@ namespace RegionExtractor
         public void Connect()
         {
             // Create a new client and connect to the database
-            this.client = new GraphClient(new Uri("http://localhost:7474/db/data"), new HttpClientWrapper(this.dbUsername, this.dbPassword, new HttpClient() { Timeout = TimeSpan.FromMinutes(20) }));
+            this.client = new GraphClient(new Uri("http://localhost:7474/db/data"), this.dbUsername, this.dbPassword);
             this.client.Connect();
         }
 
@@ -91,20 +91,44 @@ namespace RegionExtractor
             Console.WriteLine($"Functional Family {funfam.Name} Successfully Written To Graph");
         }
 
-        // Method to retrieve all funfam nodes from the graph database
-        public dynamic GetClusters()
+        // Method to calculate the levenshtein string distance through a stored procedure
+        public dynamic LevenshteinProcedure(string newSequence, int threshold)
         {
-            // Run the query
-            var funfamQuery = this.client.Cypher
-                .Match("(a:Cluster)--(b:FunFam)")
-                .Return((a, b) => new
+            var levenshteinQuery = this.client.Cypher
+                .Match("(c:Cluster)")
+                .Call($"functionPrediction.levenshtein('{newSequence}', c.consensus, c.gaps, '{threshold}')")
+                .Yield("levenshteinSimilarity, reverseComparison, regionStart, regionLength")
+                .Return((c, levenshteinSimilarity, reverseComparison, regionStart, regionLength) => new
                 {
-                    functionalfamily = b.As<FunctionalFamily>(),
-                    cluster = a.As<RegionCluster>()
+                    Cluster = c.As<RegionCluster>(),
+                    LevenshteinSimilarity = levenshteinSimilarity.As<String>(),
+                    ReverseComparison = reverseComparison.As<String>(),
+                    RegionStart = regionStart.As<String>(),
+                    RegionLength = regionLength.As<String>()
                 })
                 .Results;
 
-            return funfamQuery;
+             return levenshteinQuery;
+        }
+
+        // Method to calculate the fuzzy macthing score through a stored procedure
+        public dynamic FuzzyProcedure(string newSequence, int threshold)
+        {
+            var fuzzyQuery = this.client.Cypher
+                .Match("(c:Cluster)")
+                .Call($"functionPrediction.fuzzy('{newSequence}', c.consensus, c.gaps, '{threshold}')")
+                .Yield("levenshteinSimilarity, reverseComparison, regionStart, regionLength")
+                .Return((c, levenshteinSimilarity, reverseComparison, regionStart, regionLength) => new
+                {
+                    Cluster = c.As<RegionCluster>(),
+                    LevenshteinSimilarity = levenshteinSimilarity.As<String>(),
+                    ReverseComparison = reverseComparison.As<String>(),
+                    RegionStart = regionStart.As<String>(),
+                    RegionLength = regionLength.As<String>()
+                })
+                .Results;
+
+            return fuzzyQuery;
         }
 
         // Method to retrieve the passed functional family from the graph database

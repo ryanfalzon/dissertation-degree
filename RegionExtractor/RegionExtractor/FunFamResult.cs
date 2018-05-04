@@ -10,46 +10,37 @@ namespace RegionExtractor
     {
         // Private variables
         private string name;
-        private int funfamSequences;
-        private string cluster;
-        private int clusterSequences;
-        private string consensus;
-        private int similarityLevenshtein;
-        private int regionX;
-        private int length;
-        private bool furtherComparison;
-        private bool reverseComparison;
         private int similarityKmer;
+        private int regionStart;
+        private int regionEnd;
+        private int length;
+        private bool funfamMemberBase50;
+        private bool funfamMemberBase60;
+        private dynamic levenshteinResults;
 
         // Getters and setters
         public string Name { get => name; set => name = value; }
-        public int FunfamSequences { get => funfamSequences; set => funfamSequences = value; }
-        public string Cluster { get => cluster; set => cluster = value; }
-        public int ClusterSequences { get => clusterSequences; set => clusterSequences = value; }
-        public string Consensus { get => consensus; set => consensus = value; }
-        public int SimilarityLevenshtein { get => similarityLevenshtein; set => similarityLevenshtein = value; }
-        public int RegionX { get => regionX; set => regionX = value; }
-        public int Length { get => length; set => length = value; }
-        public bool FurtherComparison { get => furtherComparison; set => furtherComparison = value; }
-        public bool ReverseComparison { get => reverseComparison; set => reverseComparison = value; }
         public int SimilarityKmer { get => similarityKmer; set => similarityKmer = value; }
+        public int RegionStart { get => regionStart; set => regionStart = value; }
+        public int RegionEnd { get => regionEnd; set => regionEnd = value; }
+        public int Length { get => length; set => length = value; }
+        public bool FunfamMemberBase50 { get => funfamMemberBase50; set => funfamMemberBase50 = value; }
+        public bool FunfamMemberBase60 { get => funfamMemberBase60; set => funfamMemberBase60 = value; }
+        public dynamic LevenshteinResults { get => levenshteinResults; set => levenshteinResults = value; }
         
         // Constructor
-        public FunFamResult(string name, int funfamSequences, string cluster, int clusterSequences, string consensus)
+        public FunFamResult(dynamic levenshteinResults)
         {
-            this.name = name;
-            this.funfamSequences = funfamSequences;
-            this.cluster = cluster;
-            this.clusterSequences = clusterSequences;
-            this.consensus = consensus;
-            this.furtherComparison = false;
-            this.reverseComparison = false;
+            this.name = levenshteinResults.Cluster.Name;
+            this.levenshteinResults = levenshteinResults;
+            this.funfamMemberBase50 = false;
+            this.funfamMemberBase60 = false;
         }
 
         // Method to return the data for this result
         public override string ToString()
         {
-            return $"{this.name}, {this.funfamSequences}, {this.cluster}, {this.clusterSequences}, {this.similarityLevenshtein}, {this.regionX} -> {this.length}, {this.furtherComparison}, {this.reverseComparison}, {this.similarityKmer}";
+            return $"{this.name},{this.similarityKmer},{this.regionStart},{this.regionEnd},{this.length},{this.funfamMemberBase50}";
         }
     }
 }

@@ -12,23 +12,27 @@ namespace RegionExtractor
         // Properties
         private string index;
         private string sequence;
+        private string gaps;
 
         // Getters and setters
         [JsonProperty("index")]
         public string Index { get => index; set => index = value; }
         [JsonProperty("sequence")]
         public string Sequence { get => sequence; set => sequence = value; }
+        [JsonProperty("gaps")]
+        public string Gaps { get => gaps; set => gaps = value; }
 
-        // Constructor 1
+        // Default Constructor
         public Kmer()
         {
         }
 
-        // Constructor 2
-        public Kmer(string index, string sequence)
+        // Constructor
+        public Kmer(string index, string sequence, string gaps)
         {
             this.index = index;
             this.sequence = sequence;
+            this.Gaps = gaps;
         }
     }
 }

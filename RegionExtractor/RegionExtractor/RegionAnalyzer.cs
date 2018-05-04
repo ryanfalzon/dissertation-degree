@@ -31,11 +31,13 @@ namespace RegionExtractor
 
         // Class properties
         private List<SplitDataRow> data;
+        private int kmerSize;
 
         // Constructor
-        public RegionAnalyzer(List<DataRow> data)
+        public RegionAnalyzer(List<DataRow> data, int kmerSize)
         {
             this.data = new List<SplitDataRow>();
+            this.kmerSize = kmerSize;
 
             // Check if data is still available for processing
             while(data.Count > 0)
@@ -169,11 +171,14 @@ namespace RegionExtractor
                                         consensus = RemoveGaps(consensus);
 
                                         // Generate kmers and add them to aan object
+                                        int gaps = NumberOfGaps(consensus);
                                         RegionCluster cluster = new RegionCluster(
                                             $"{functionalFamily.Name} - {functionalFamily.Clusters.Count}",
                                             consensus,
+                                            this.kmerSize.ToString(),
+                                            gaps.ToString(),
                                             clusteredRegions[clusteredRegionsCount].Count.ToString(),
-                                            GenerateKmers(consensus, 3));
+                                            GenerateKmers(consensus, this.kmerSize));
                                         functionalFamily.Clusters.Add(cluster);
                                     }
                                     catch (Exception e)
@@ -213,11 +218,6 @@ namespace RegionExtractor
                     gdc.Connect();
                     gdc.ToGraph(functionalFamily);
                     gdc.Disconnect();
-
-                    /*foreach (RegionCluster cluster in functionalFamily.Clusters)
-                    {
-                        Console.WriteLine($"{cluster.Name } - {cluster.ConsensusSequence }");
-                    }*/
                 }
 
                 // Add the logs to the lists
@@ -496,11 +496,28 @@ namespace RegionExtractor
             return noGaps;
         }
 
+        // Method to get the number of gaps in a sequence
+        private int NumberOfGaps(string sequence)
+        {
+            int gaps = 0;
+
+            // Iterate the whole sequence
+            foreach (char aminoacid in sequence)
+            {
+                if (aminoacid == '-')
+                {
+                    gaps++;
+                }
+            }
+
+            return gaps;
+        }
+
         // A method that will generate all the kmers of the passed string
-        private List<string> GenerateKmers(string sequence, int kmerLength)
+        private List<Kmer> GenerateKmers(string sequence, int kmerLength)
         {
             // List to hold the kmers
-            List<string> kmers = new List<string>();
+            List<Kmer> kmers = new List<Kmer>();
 
             // Create the kmers
             for(int i = 0; i <= (sequence.Length - kmerLength); i++)
@@ -510,7 +527,8 @@ namespace RegionExtractor
                 // Check i fkmer is composed of only gaps
                 if (!kmer.Equals("---"))
                 {
-                    kmers.Add(sequence.Substring(i, kmerLength));
+                    string temp = sequence.Substring(i, kmerLength);
+                    kmers.Add(new Kmer(i.ToString(), temp, NumberOfGaps(temp).ToString()));
                 }
             }
             
