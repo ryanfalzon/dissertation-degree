@@ -9,7 +9,7 @@ namespace RegionExtractor
 {
     class FunctionalFamily
     {
-        // Privaste properties
+        // Private properties
         private string name;
         private int numberOfSequences;
         private int numberOfClusters;
@@ -26,25 +26,16 @@ namespace RegionExtractor
         [JsonProperty("numberOfClusters")]
         public int NumberOfClusters { get => numberOfClusters; set => numberOfClusters = value; }
 
-        // Constructor 1
+        // Default Constructor
         public FunctionalFamily()
         {
             this.clusters = new List<RegionCluster>();
         }
 
-        // Constructor 2
+        // Constructor
         public FunctionalFamily(string name)
         {
             this.name = name;
-            this.clusters = new List<RegionCluster>();
-        }
-
-        // Constructor 3
-        public FunctionalFamily(string name, int numberOfSequences, int numberOfClusters)
-        {
-            this.name = name;
-            this.numberOfSequences = numberOfSequences;
-            this.numberOfClusters = numberOfClusters;
             this.clusters = new List<RegionCluster>();
         }
 

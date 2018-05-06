@@ -75,7 +75,7 @@ namespace RegionExtractor
         public List<DataRow> GetData()
         {
             // Create a query
-            MySqlCommand command = new MySqlCommand(($"SELECT * FROM {this.tableName} ORDER BY functional_family DESC;"), connection);
+            MySqlCommand command = new MySqlCommand(($"SELECT * FROM {this.tableName} ORDER BY functional_family;"), connection);
             List<DataRow> data = new List<DataRow>();
             try
             {

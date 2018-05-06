@@ -8,7 +8,7 @@ namespace RegionExtractor
 {
     class Statistics
     {
-        // Properties
+        // Private properties
         private int min;
         private int max;
         private int average;
@@ -16,6 +16,7 @@ namespace RegionExtractor
         private int variance;
         private int standardDeviation;
 
+        // Getters and setters
         public int Min { get => min; set => min = value; }
         public int Max { get => max; set => max = value; }
         public int Average { get => average; set => average = value; }

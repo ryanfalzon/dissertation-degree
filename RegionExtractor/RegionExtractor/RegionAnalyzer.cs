@@ -29,13 +29,15 @@ namespace RegionExtractor
             internal List<DataRow> Rows { get => rows; set => rows = value; }
         }
 
-        // Class properties
+        // Private properties
         private List<SplitDataRow> data;
+        private int kmerSize;
 
         // Constructor
-        public RegionAnalyzer(List<DataRow> data)
+        public RegionAnalyzer(List<DataRow> data, int kmerSize)
         {
             this.data = new List<SplitDataRow>();
+            this.kmerSize = kmerSize;
 
             // Check if data is still available for processing
             while(data.Count > 0)
@@ -75,7 +77,7 @@ namespace RegionExtractor
             // Pprocess all the data in the class property
             foreach(SplitDataRow splitDataRow in this.data)
             {
-                Console.WriteLine($"Processing Functional Family: {splitDataRow.Funfam}");
+                Console.WriteLine($"\nProcessing Functional Family: {splitDataRow.Funfam}");
 
                 // Some temp vairables
                 FunctionalFamily functionalFamily = new FunctionalFamily(splitDataRow.Funfam);
@@ -108,26 +110,26 @@ namespace RegionExtractor
                                 {
                                     regions.Add(new Sequence(Alphabets.Protein, currentRegion));
                                     regionLengths.Add(currentRegion.Length);
-                                    dataLog.AppendLine($"{s.ProteinID}, {s.FunctionalFamily}, {s.SequenceHeader} {currentRegion}");
+                                    dataLog.AppendLine($"{s.ProteinID},{s.FunctionalFamily},{s.SequenceHeader} {currentRegion}");
                                 }
                                 catch(Exception e)
                                 {
-                                    errorLog.AppendLine($"4, Illegal Protein Alphabet Character, Sequence ID - {s.ProteinID}");
+                                    errorLog.AppendLine($"4,{e.Message},Functional Family - {splitDataRow.Funfam} & Sequence ID - {s.ProteinID}");
                                 }
                             }
                             else
                             {
-                                errorLog.AppendLine($"3, Region Is Smaller Than Required, Functional Family - {splitDataRow.Funfam} & Sequence ID - {s.ProteinID}");
+                                errorLog.AppendLine($"3,Region Is Smaller Than Required,Functional Family - {splitDataRow.Funfam} & Sequence ID - {s.ProteinID}");
                             }
                         }
                         catch(Exception e)
                         {
-                            errorLog.AppendLine($"2, Region Specified Is Beyond Sequence Length, Functional Family - {splitDataRow.Funfam} & Sequence ID - {s.ProteinID}");
+                            errorLog.AppendLine($"2,{e.Message},Functional Family - {splitDataRow.Funfam} & Sequence ID - {s.ProteinID}");
                         }
                     }
                     else
                     {
-                        errorLog.AppendLine($"1, No Sequence Found For This Protein, Sequence ID - {s.ProteinID}");
+                        errorLog.AppendLine($"1,No Sequence Found For This Protein,Functional Family - {splitDataRow.Funfam} & Sequence ID - {s.ProteinID}");
                     }
                 }
 
@@ -154,7 +156,6 @@ namespace RegionExtractor
 
                             // Get consensus sequence
                             string consensus = GetConsensus(alignedRegions);
-                            msaLog.AppendLine($"{splitDataRow.Funfam}, {clusteredRegionsCount}, {consensus}");
 
                             // Validate the consensus sequence
                             if (ValidateConsensus(consensus))
@@ -168,17 +169,22 @@ namespace RegionExtractor
                                         // First remove any unnecsary gaps from the consensus sequence
                                         consensus = RemoveGaps(consensus);
 
-                                        // Generate kmers and add them to aan object
+                                        // Generate kmers and add them to an object
                                         RegionCluster cluster = new RegionCluster(
-                                            $"{functionalFamily.Name}/{(char)(clusteredRegionsCount + 65)}",
+                                            $"{functionalFamily.Name} - {functionalFamily.Clusters.Count}",
+                                            this.kmerSize.ToString(),
                                             consensus,
+                                            NumberOfGaps(consensus),
                                             clusteredRegions[clusteredRegionsCount].Count.ToString(),
-                                            GenerateKmers(consensus, 3));
+                                            GenerateKmers(consensus, this.kmerSize));
                                         functionalFamily.Clusters.Add(cluster);
+
+                                        // Add cluster to log
+                                        msaLog.AppendLine(cluster.ForFile());
                                     }
                                     catch (Exception e)
                                     {
-                                        errorLog.AppendLine($"7, Error While Computing K-Mers, Functional Family - {splitDataRow.Funfam}");
+                                        errorLog.AppendLine($"7,{e.Message},Functional Family - {splitDataRow.Funfam}");
                                     }
                                 }
                             }
@@ -194,12 +200,12 @@ namespace RegionExtractor
                         }
                         catch (Exception e)
                         {
-                            errorLog.AppendLine($"6, Error While Computing Multiple Sequence Alignment, Functional Family - {splitDataRow.Funfam}");
+                            errorLog.AppendLine($"6,{e.Message},Functional Family - {splitDataRow.Funfam}");
                         }
                     }
                     else
                     {
-                        errorLog.AppendLine($"5, Current Functional Family Has No Sequences, Functional Family - {splitDataRow.Funfam}");
+                        errorLog.AppendLine($"5,Current Functional Family Has No Sequences,Functional Family - {splitDataRow.Funfam}");
                     }
 
                     clusteredRegionsCount++;
@@ -209,7 +215,7 @@ namespace RegionExtractor
                 if(functionalFamily.Clusters.Count > 0)
                 {
                     functionalFamily.NumberOfClusters = functionalFamily.Clusters.Count;
-                    GraphDatabaseConnection gdc = new GraphDatabaseConnection("bolt://localhost", "neo4j", "finaldata");
+                    GraphDatabaseConnection gdc = new GraphDatabaseConnection("bolt://localhost", "neo4j", "fypryan");
                     gdc.Connect();
                     gdc.ToGraph(functionalFamily);
                     gdc.Disconnect();
@@ -224,7 +230,7 @@ namespace RegionExtractor
 
             // Stop the stopwatch
             watch.Stop();
-            Console.WriteLine($"\nTotal Time For Evaluation: {watch.Elapsed.TotalMinutes.ToString()} minutes");
+            Console.WriteLine($"\nTotal Time For Evaluation: {watch.Elapsed.TotalHours.ToString()} Hours");
 
             // Check if the suer wishes to save the processed data to text files
             Console.Write("Do you wish to store the processed data to text files? Y/N: ");
@@ -330,9 +336,7 @@ namespace RegionExtractor
             for (int i = 0; i < aligner.AlignedSequences.Count; ++i)
             {
                 alignedRegions.Add(new string(aligner.AlignedSequences[i].Select(a => (char)a).ToArray()));
-                Console.WriteLine(alignedRegions[i]);
             }
-            Console.WriteLine();
             return alignedRegions;
         }
 
@@ -366,23 +370,13 @@ namespace RegionExtractor
 
             // Replace 'X' symbol in consensus sequence with gaps and return the consensus
             consensus = consensus.Replace('X', '-');
-            Console.WriteLine(consensus + "\n\n\n");
             return consensus;
         }
 
         // Method to validate that a consensus sequence contains enough information
         public bool ValidateConsensus(string consensus)
         {
-            int gaps = 0;
-
-            // Iterate the whole sequence
-            foreach (char aminoacid in consensus)
-            {
-                if (aminoacid == '-')
-                {
-                    gaps++;
-                }
-            }
+            int gaps = NumberOfGaps(consensus);
 
             // Calculate the percentage gaps
             double percentage = ((double)gaps / consensus.Length) * 100;
@@ -452,6 +446,23 @@ namespace RegionExtractor
             return new List<List<ISequence>> { clusterA, clusterB };
         }
 
+        // Method to get the number of gaps in a sequence
+        private int NumberOfGaps(string sequence)
+        {
+            int gaps = 0;
+
+            // Iterate the whole sequence
+            foreach (char aminoacid in sequence)
+            {
+                if (aminoacid == '-')
+                {
+                    gaps++;
+                }
+            }
+
+            return gaps;
+        }
+
         // Method to remove unwanted gaps
         private string RemoveGaps(string consensus)
         {
@@ -495,15 +506,21 @@ namespace RegionExtractor
         }
 
         // A method that will generate all the kmers of the passed string
-        private List<string> GenerateKmers(string sequence, int kmerLength)
+        private List<Kmer> GenerateKmers(string sequence, int kmerLength)
         {
             // List to hold the kmers
-            List<string> kmers = new List<string>();
+            List<Kmer> kmers = new List<Kmer>();
 
             // Create the kmers
             for(int i = 0; i <= (sequence.Length - kmerLength); i++)
             {
-                kmers.Add(sequence.Substring(i, kmerLength));
+                string kmer = sequence.Substring(i, kmerLength);
+
+                // Check if kmer is composed of only ga[s
+                if (((kmerLength == 3) && !kmer.Equals("---")) || ((kmerLength == 4) && !kmer.Equals("----")))
+                {
+                    kmers.Add(new Kmer(i.ToString(), kmer, NumberOfGaps(kmer).ToString()));
+                }
             }
             
             return kmers;
