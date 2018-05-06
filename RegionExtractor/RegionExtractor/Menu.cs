@@ -96,7 +96,7 @@ namespace RegionExtractor
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("\nError While Reading Text File");
+                            Console.WriteLine($"\n{e.Message}\n{e.StackTrace}");
                             Console.Write("Press Any key To Continue...");
                             Console.ReadLine();
                         }

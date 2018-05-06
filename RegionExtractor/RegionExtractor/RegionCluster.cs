@@ -16,10 +16,10 @@ namespace RegionExtractor
         private string gaps;
         private string numberOfSequences;
         private string numberOfKmers;
-        private string thresholdBase50;
-        private string cutoffBase50;
         private string thresholdBase60;
         private string cutoffBase60;
+        private string thresholdBase70;
+        private string cutoffBase70;
         private List<Kmer> kmers;
 
         // Getters and setters
@@ -35,10 +35,10 @@ namespace RegionExtractor
         public string NumberOfSequences { get => numberOfSequences; set => numberOfSequences = value; }
         [JsonProperty("numberOfKmers")]
         public string NumberOfKmers { get => numberOfKmers; set => numberOfKmers = value; }
-        [JsonProperty("threshold50")]
-        public string ThresholdBase50 { get => thresholdBase50; set => thresholdBase50 = value; }
-        [JsonProperty("cutoff50")]
-        public string CutoffBase50 { get => cutoffBase50; set => cutoffBase50 = value; }
+        [JsonProperty("threshold70")]
+        public string ThresholdBase70 { get => thresholdBase70; set => thresholdBase70 = value; }
+        [JsonProperty("cutoff70")]
+        public string CutoffBase70 { get => cutoffBase70; set => cutoffBase70 = value; }
         [JsonProperty("threshold60")]
         public string ThresholdBase60 { get => thresholdBase60; set => thresholdBase60 = value; }
         [JsonProperty("cutoff60")]
@@ -59,11 +59,11 @@ namespace RegionExtractor
             this.gaps = gaps;
             this.numberOfSequences = numberOfSequences;
             this.numberOfKmers = kmers.Count.ToString();
-            this.thresholdBase50 = CalculateThreshold(50);
-            this.cutoffBase50 = CalculateCutoff(50);
+            this.kmers = kmers;
+            this.thresholdBase70 = CalculateThreshold(70);
+            this.cutoffBase70 = CalculateCutoff(70);
             this.ThresholdBase60 = CalculateThreshold(60);
             this.cutoffBase60 = CalculateCutoff(60);
-            this.kmers = kmers;
         }
 
         // Method to calculate the threshold
@@ -80,13 +80,19 @@ namespace RegionExtractor
             return (Convert.ToInt32(this.numberOfKmers) - ((baseScore / 100) * Convert.ToInt32(this.numberOfKmers))).ToString();
         }
 
+        // Method to return class as a string
+        public string ForFile()
+        {
+            return $"{this.name},{this.consensusSequence},{this.kmerSize},{this.gaps},{this.numberOfSequences},{this.numberOfKmers},{this.thresholdBase60},{this.cutoffBase60},{this.thresholdBase70},{this.cutoffBase70}";
+        }
+
         // Method to turn object to a string for graph database
         public override string ToString()
         {
             // Temp variables
             bool first = true;
             StringBuilder queryBuilder = new StringBuilder();
-            queryBuilder.Append($"(c:Cluster {{name: \"{this.name}\", consensus: \"{this.consensusSequence}\", kmerSize: \"{this.kmerSize}\", gaps: \"{this.gaps}\", numberOfSequence: \"{this.numberOfSequences}\", numberOfKmers: \"{this.numberOfKmers}\", threshold50: \"{this.thresholdBase50}\", cutoff50: \"{this.cutoffBase50}\", threshold60: \"{this.thresholdBase60}\", cutoff60: \"{this.CutoffBase60}\"}})");
+            queryBuilder.Append($"(c:Cluster {{name: \"{this.name}\", consensus: \"{this.consensusSequence}\", kmerSize: \"{this.kmerSize}\", gaps: \"{this.gaps}\", numberOfSequence: \"{this.numberOfSequences}\", numberOfKmers: \"{this.numberOfKmers}\", threshold70: \"{this.thresholdBase70}\", cutoff70: \"{this.cutoffBase70}\", threshold60: \"{this.thresholdBase60}\", cutoff60: \"{this.CutoffBase60}\"}})");
 
             // Add the kmers to the query
             int kmerCount = 0;

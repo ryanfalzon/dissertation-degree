@@ -2,10 +2,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>fyp_ryanfalzon</groupId>
-  <artifactId>stored_procedures</artifactId>
-  <name>FYP Stored Procedures</name>
-  <version>1.0-SNAPSHOT</version>
-  <description>A collection of stored procedures that will be used to predict protein functional families</description>
+  <artifactId>function_prediction</artifactId>
+  <name>Function Prediction</name>
+  <version>1.0</version>
+  <description>A stored procedure that can be used to shortlist a long list of functional families for a new sequence's function prediction</description>
   <build>
     <plugins>
       <plugin>
@@ -18,7 +18,6 @@
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.3</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -114,7 +113,7 @@
     <dependency>
       <groupId>org.neo4j.driver</groupId>
       <artifactId>neo4j-java-driver</artifactId>
-      <version>1.4.2</version>
+      <version>1.5.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -134,4 +133,3 @@
     <neo4j.version>3.3.5</neo4j.version>
   </properties>
 </project>
-

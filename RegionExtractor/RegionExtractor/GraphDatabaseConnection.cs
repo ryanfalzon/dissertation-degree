@@ -96,7 +96,7 @@ namespace RegionExtractor
         {
             var levenshteinQuery = this.client.Cypher
                 .Match("(c:Cluster)")
-                .Call($"functionPrediction.levenshtein('{newSequence}', c.consensus, c.gaps, '{threshold}')")
+                .Call($"functionPrediction.levenshtein('{newSequence}', c.name, c.consensus, c.gaps, '{threshold}')")
                 .Yield("levenshteinSimilarity, reverseComparison, regionStart, regionLength")
                 .Return((c, levenshteinSimilarity, reverseComparison, regionStart, regionLength) => new
                 {
@@ -111,24 +111,20 @@ namespace RegionExtractor
              return levenshteinQuery;
         }
 
-        // Method to calculate the fuzzy macthing score through a stored procedure
-        public dynamic FuzzyProcedure(string newSequence, int threshold)
+        // Method to retrieve all funfam nodes from the graph database
+        public dynamic GetClusters()
         {
-            var fuzzyQuery = this.client.Cypher
-                .Match("(c:Cluster)")
-                .Call($"functionPrediction.fuzzy('{newSequence}', c.consensus, c.gaps, '{threshold}')")
-                .Yield("levenshteinSimilarity, reverseComparison, regionStart, regionLength")
-                .Return((c, levenshteinSimilarity, reverseComparison, regionStart, regionLength) => new
+            // Run the query
+            var funfamQuery = this.client.Cypher
+                .Match("(a:Cluster)--(b:FunFam)")
+                .Return((a, b) => new
                 {
-                    Cluster = c.As<RegionCluster>(),
-                    LevenshteinSimilarity = levenshteinSimilarity.As<String>(),
-                    ReverseComparison = reverseComparison.As<String>(),
-                    RegionStart = regionStart.As<String>(),
-                    RegionLength = regionLength.As<String>()
+                    functionalfamily = b.As<FunctionalFamily>(),
+                    cluster = a.As<RegionCluster>()
                 })
                 .Results;
 
-            return fuzzyQuery;
+            return funfamQuery;
         }
 
         // Method to retrieve the passed functional family from the graph database

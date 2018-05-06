@@ -156,7 +156,6 @@ namespace RegionExtractor
 
                             // Get consensus sequence
                             string consensus = GetConsensus(alignedRegions);
-                            msaLog.AppendLine($"{splitDataRow.Funfam}, {clusteredRegionsCount}, {consensus}");
 
                             // Validate the consensus sequence
                             if (ValidateConsensus(consensus))
@@ -170,16 +169,15 @@ namespace RegionExtractor
                                         // First remove any unnecsary gaps from the consensus sequence
                                         consensus = RemoveGaps(consensus);
 
-                                        // Generate kmers and add them to aan object
+                                        // Generate kmers and add them to an object
+                                        string clusternName = $"{functionalFamily.Name} - {functionalFamily.Clusters.Count}";
                                         int gaps = NumberOfGaps(consensus);
-                                        RegionCluster cluster = new RegionCluster(
-                                            $"{functionalFamily.Name} - {functionalFamily.Clusters.Count}",
-                                            consensus,
-                                            this.kmerSize.ToString(),
-                                            gaps.ToString(),
-                                            clusteredRegions[clusteredRegionsCount].Count.ToString(),
-                                            GenerateKmers(consensus, this.kmerSize));
+                                        List<Kmer> kmers = GenerateKmers(consensus, this.kmerSize);
+                                        RegionCluster cluster = new RegionCluster(clusternName, consensus, this.kmerSize.ToString(), gaps.ToString(), clusteredRegions[clusteredRegionsCount].Count.ToString(), kmers);
                                         functionalFamily.Clusters.Add(cluster);
+
+                                        // Add cluster to log
+                                        msaLog.AppendLine(cluster.ForFile());
                                     }
                                     catch (Exception e)
                                     {
@@ -525,7 +523,7 @@ namespace RegionExtractor
                 string kmer = sequence.Substring(i, kmerLength);
 
                 // Check i fkmer is composed of only gaps
-                if (!kmer.Equals("---"))
+                if (((this.kmerSize == 3) && !kmer.Equals("---")) || ((this.kmerSize == 4) && !kmer.Equals("----")))
                 {
                     string temp = sequence.Substring(i, kmerLength);
                     kmers.Add(new Kmer(i.ToString(), temp, NumberOfGaps(temp).ToString()));
@@ -542,10 +540,10 @@ namespace RegionExtractor
             StringBuilder statisticsLog = new StringBuilder();
             StringBuilder msaLog = new StringBuilder();
             StringBuilder errorLog = new StringBuilder();
-            dataLog.AppendLine("Protein ID, Functional Family, Region");
-            errorLog.AppendLine("Type, Details, Information");
-            statisticsLog.AppendLine("Functional Family, Minimum, Maximum, Average, Median, Variance, Standard Deviation");
-            msaLog.AppendLine("Functional Family, Cluster, Consensus Sequence");
+            dataLog.AppendLine("Protein ID,Functional Family,Region");
+            errorLog.AppendLine("Type,Details,Information");
+            statisticsLog.AppendLine("Functional Family,Minimum,Maximum,Average,Median,Variance,Standard Deviation");
+            msaLog.AppendLine("Cluster Name,Consensus Sequence,K-Mer Size,Number Of Gaps,Number Of Sequences,Number Of K-Mers,Threhsold Base 60,Cutoff Base 60,Threshold Base 70,Cutoff Base 70");
 
             // Join the list of string builder to one string buidler
             foreach (StringBuilder sb in dataLogs)

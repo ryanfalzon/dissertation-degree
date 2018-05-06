@@ -81,6 +81,7 @@
     <Compile Include="GraphDatabaseConnection.cs" />
     <Compile Include="GraphDataRow.cs" />
     <Compile Include="Kmer.cs" />
+    <Compile Include="LevenshteinResults.cs" />
     <Compile Include="Menu.cs" />
     <Compile Include="FunctionalFamily.cs" />
     <Compile Include="Program.cs" />

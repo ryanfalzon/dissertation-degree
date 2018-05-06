@@ -1,2 +1,2 @@
-function_prediction\Procedures$Match.class
-function_prediction\Procedures.class
+function_prediction\LevenshteinSimilarity.class
+function_prediction\LevenshteinSimilarity$Match.class
