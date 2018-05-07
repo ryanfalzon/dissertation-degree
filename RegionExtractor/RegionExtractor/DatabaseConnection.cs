@@ -108,5 +108,31 @@ namespace RegionExtractor
                 return new List<DataRow>();
             }
         }
+
+        // Method to pass some data to the database
+        public bool InsertThresholds(FunctionalFamily funfam)
+        {
+            // Iterate over every cluster in the functional familt
+            foreach (RegionCluster cluster in funfam.Clusters)
+            {
+                // Try to insert the thresholds in the database
+                try
+                {
+                    MySqlCommand command = new MySqlCommand(($"INSERT INTO functionalfamilies_threshold(funfam_name, threshold_base_50, cutoff_base_50, threshold_base_60, cutoff_base_60, threshold_base_70, cutoff_base_70)" +
+                        $"VALUES({cluster.GetThresholds()});"), connection);
+                    MySqlDataReader reader = command.ExecuteReader();
+
+                    while (reader.Read())
+                    {
+                    }
+                }
+                catch (Exception e)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

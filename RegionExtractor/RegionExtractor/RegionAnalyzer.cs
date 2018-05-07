@@ -174,7 +174,7 @@ namespace RegionExtractor
                                             $"{functionalFamily.Name} - {functionalFamily.Clusters.Count}",
                                             this.kmerSize.ToString(),
                                             consensus,
-                                            NumberOfGaps(consensus),
+                                            NumberOfGaps(consensus).ToString(),
                                             clusteredRegions[clusteredRegionsCount].Count.ToString(),
                                             GenerateKmers(consensus, this.kmerSize));
                                         functionalFamily.Clusters.Add(cluster);
@@ -215,9 +215,19 @@ namespace RegionExtractor
                 if(functionalFamily.Clusters.Count > 0)
                 {
                     functionalFamily.NumberOfClusters = functionalFamily.Clusters.Count;
+
+                    // Initialize database connections
+                    DatabaseConnection dbc = new DatabaseConnection("fyp_ryanfalzon", "functionalfamilies_thresholds");
+                    dbc.Connect(true);
                     GraphDatabaseConnection gdc = new GraphDatabaseConnection("bolt://localhost", "neo4j", "fypryan");
                     gdc.Connect();
+
+                    // transfer data to databases
                     gdc.ToGraph(functionalFamily);
+                    dbc.InsertThresholds(functionalFamily);
+
+                    // Disconnect databases
+                    dbc.Connect(false);
                     gdc.Disconnect();
                 }
 

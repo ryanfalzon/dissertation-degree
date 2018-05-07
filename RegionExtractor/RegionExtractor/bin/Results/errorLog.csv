@@ -1,89 +1,65 @@
 Type, Details, Information
-9, Current Functional Family Has No Sequences, Functional Family - 3.90.660.10.FF2974
+6,One or more errors occurred.,Functional Family - 1.10.10.10.FF266362
 
-9, Current Functional Family Has No Sequences, Functional Family - 3.90.180.10.FF33953
+7,Attempted to divide by zero.,Functional Family - 1.10.10.60.FF124930
 
-9, Current Functional Family Has No Sequences, Functional Family - 3.90.150.10.FF1101
+4,Specified argument was out of the range of valid values.
+Parameter name: Sequence contains an illegal character not allowed in alphabet: Protein.  Sequence was:
+RSQITKRKRMSLVKEKKAAQTLSAILLAFIITWTPYNIMVLVNTFCDSCIPKTFWNLGYWLCYINSTVNPVCYALCNKTFRTTFKMLLLCQCDKKKRRKQQYQZRQSVIFH,Functional Family - 1.20.1070.10.FF45451 & Sequence ID - fc7e03bba9f3855d59575ec1832b49fd
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.50.50.60.FF113089
+4,Specified argument was out of the range of valid values.
+Parameter name: Sequence contains an illegal character not allowed in alphabet: Protein.  Sequence was:
+NSSDQNLTSEELLNRMPSKILVSLTLSGLALMTTTINSLVIAAIIVTRKLHHPANYLICSLAVTDFLVAVLVMPFSIVYIVRESWIMGQVVCDIWLSVDITCCTCSILHLSAIALDRYRAITDAVEYARKRTPKHAGIMITIVWIISVFISMPPLFWRHQGTSRDDECIIKHBHIVSTIYSTFGAFYIPLALILILYYKIYRAAKTLYHKRQ,Functional Family - 1.20.1070.10.FF45459 & Sequence ID - 6b0d69429b7d4529fa42d5af198f6c98
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.50.740.FF8992
+6,One or more errors occurred.,Functional Family - 1.20.1070.10.FF45522
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.50.740.FF11941
+6,One or more errors occurred.,Functional Family - 2.170.150.20.FF2515
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.50.740.FF11890
+6,One or more errors occurred.,Functional Family - 3.20.20.100.FF14931
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.50.740.FF11886
+6,One or more errors occurred.,Functional Family - 3.20.20.460.FF27
 
-1, Illegal Protein Alphabet Character, Sequence ID - 3fc244b4e100ce8e9c2f1245cd71866e
+6,One or more errors occurred.,Functional Family - 3.20.20.70.FF118790
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.50.2300.FF67535
+6,One or more errors occurred.,Functional Family - 3.30.1330.10.FF7254
 
-1, Illegal Protein Alphabet Character, Sequence ID - 3fc244b4e100ce8e9c2f1245cd71866e
+7,Attempted to divide by zero.,Functional Family - 3.30.160.110.FF921
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.30.10.FF79829
+7,Attempted to divide by zero.,Functional Family - 3.30.160.60.FF16353
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.30.10.FF79754
+6,One or more errors occurred.,Functional Family - 3.40.228.10.FF5789
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.30.10.FF79735
+6,One or more errors occurred.,Functional Family - 3.40.30.10.FF3495
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.30.10.FF79626
+6,One or more errors occurred.,Functional Family - 3.40.30.10.FF79122
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.30.10.FF79122
+6,One or more errors occurred.,Functional Family - 3.40.30.10.FF79626
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.30.10.FF3495
+6,One or more errors occurred.,Functional Family - 3.40.30.10.FF79735
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.40.228.10.FF5789
+6,One or more errors occurred.,Functional Family - 3.40.30.10.FF79754
 
-9, Current Functional Family Has No Sequences, Functional Family - 3.30.70.330.FF41450
+6,One or more errors occurred.,Functional Family - 3.40.30.10.FF79829
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.30.1330.10.FF7254
+4,Specified argument was out of the range of valid values.
+Parameter name: Sequence contains an illegal character not allowed in alphabet: Protein.  Sequence was:
+HVLSVSFPIKRDDGZWEVIEGYRAQHSHQRTPCKGGIRYSLDVSVDEVKALASLMTYKCAVVDVPFGGAKAGVKINPKNYTDEDLEKITRRFTMELAKKGFIGPGVDVPAPNMSTGEREMSWIADTYASTIGHY,Functional Family - 3.40.50.10860.FF8285 & Sequence ID - 3fc244b4e100ce8e9c2f1245cd71866e
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.20.20.70.FF118790
+6,One or more errors occurred.,Functional Family - 3.40.50.2300.FF67535
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.20.20.460.FF27
+4,Specified argument was out of the range of valid values.
+Parameter name: Sequence contains an illegal character not allowed in alphabet: Protein.  Sequence was:
+GGIHGRISATGRGLFGHIENFIENASYMSILGMTPGFGDKTFAVQGFGNVGLHSMRYLHRFGAKCVAVGEFDGSIWNPDGIDPKELEDYKLQHGTIMGFPKAQKLEGSILETDCDILIPAASEKQLTKANAHKVKAKIIAEGANGPTTPQADKIFLERNIMVIPDLYLNAGGVTVSAFZZKNLNHVSYGRLTFKYERDSNYHLLMSVQESLERKFGKHGGTIPVVPTAEFQDRISGASEKDIVHSGLAYTMERSARQIMRTAMKYNLGLDLRTAAYVNAIEKVFKVYNEAGLTF,Functional Family - 3.40.50.720.FF291696 & Sequence ID - 3fc244b4e100ce8e9c2f1245cd71866e
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 3.20.20.100.FF14931
+6,One or more errors occurred.,Functional Family - 3.40.50.740.FF11886
 
-9, Current Functional Family Has No Sequences, Functional Family - 2.40.170.20.FF26214
+6,One or more errors occurred.,Functional Family - 3.40.50.740.FF11890
 
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 2.170.150.20.FF2515
+6,One or more errors occurred.,Functional Family - 3.40.50.740.FF11941
 
-9, Current Functional Family Has No Sequences, Functional Family - 2.160.20.10.FF22108
+6,One or more errors occurred.,Functional Family - 3.40.50.740.FF8992
 
-9, Current Functional Family Has No Sequences, Functional Family - 2.130.10.10.FF4978
+6,One or more errors occurred.,Functional Family - 3.50.50.60.FF113089
 
-9, Current Functional Family Has No Sequences, Functional Family - 2.130.10.10.FF3081
-
-9, Current Functional Family Has No Sequences, Functional Family - 2.130.10.10.FF15084
-
-9, Current Functional Family Has No Sequences, Functional Family - 2.130.10.10.FF103088
-
-9, Current Functional Family Has No Sequences, Functional Family - 2.130.10.10.FF102669
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.25.10.10.FF69947
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.25.10.10.FF69905
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.25.10.10.FF69625
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.25.10.10.FF69117
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.25.10.10.FF68965
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.25.10.10.FF68728
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.25.10.10.FF4990
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.25.10.10.FF3792
-
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 1.20.1070.10.FF45522
-
-1, Illegal Protein Alphabet Character, Sequence ID - 6b0d69429b7d4529fa42d5af198f6c98
-
-1, Illegal Protein Alphabet Character, Sequence ID - fc7e03bba9f3855d59575ec1832b49fd
-
-9, Current Functional Family Has No Sequences, Functional Family - 1.10.565.10.FF5104
-
-5, Error While Computing Multiple Sequence Alignment, Functional Family - 1.10.10.10.FF266362
+7,Attempted to divide by zero.,Functional Family - 3.90.105.10.FF3761
 

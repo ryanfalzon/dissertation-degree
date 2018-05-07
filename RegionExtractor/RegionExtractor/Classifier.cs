@@ -117,7 +117,7 @@ namespace RegionExtractor
                 /*foreach (RegionCluster cluster in funfam.Clusters)
                 {*/
                 //FunFamResult result = new FunFamResult(funfam.functionalfamily.Name, funfam.functionalfamily.Clusters.IndexOf(cluster));
-                FunFamResult result = new FunFamResult(funfam.functionalfamily.Name, funfam.cluster.ConsensusSequence, funfam.cluster.Name);
+                FunFamResult result = new FunFamResult(funfam.functionalfamily.Name, funfam.cluster.Consensus, funfam.cluster.Name);
 
                 if (funfam.cluster.Name.Equals("1.10.1300.10.FF1262/a"))
                 {
@@ -130,21 +130,21 @@ namespace RegionExtractor
                     string target = "";
 
                     // Check if the consensus sequence is longer than the new sequence
-                    if (funfam.cluster.ConsensusSequence.Length == newSequence.Length)
+                    if (funfam.cluster.Consensus.Length == newSequence.Length)
                     {
                         // Set the source and target strings
-                        source = funfam.cluster.ConsensusSequence;
+                        source = funfam.cluster.Consensus;
                         target = newSequence;
 
                         // The new sequence is the only k-mer in this case
                         kmers = new List<string>();
                         kmers.Add(target);
                     }
-                    else if (funfam.cluster.ConsensusSequence.Length > newSequence.Length)
+                    else if (funfam.cluster.Consensus.Length > newSequence.Length)
                     {
                         // Set the source and target strings
                         source = newSequence;
-                        target = funfam.cluster.ConsensusSequence;
+                        target = funfam.cluster.Consensus;
                         result.ReverseComparison = true;
 
                         // Get k-mers of size 'new sequence' of consensus sequence
@@ -153,7 +153,7 @@ namespace RegionExtractor
                     else
                     {
                         // Set the source and target strings
-                        source = funfam.cluster.ConsensusSequence;
+                        source = funfam.cluster.Consensus;
                         target = newSequence;
 
                         // Get k-mers of size 'new sequence' of consensus sequence
@@ -164,7 +164,7 @@ namespace RegionExtractor
                     Levenshtein distanceFunction = new Levenshtein(source);
 
                     // Calculate the levenshtein string distance
-                    int gaps = NumberOfGaps(funfam.cluster.ConsensusSequence);
+                    int gaps = NumberOfGaps(funfam.cluster.Consensus);
                     int maxLength = source.Length;
 
                     // Iterate over all k-mers and find the most similar k-mer

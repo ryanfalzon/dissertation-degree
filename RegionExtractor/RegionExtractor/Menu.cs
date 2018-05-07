@@ -52,7 +52,7 @@ namespace RegionExtractor
                             data = db.GetData();
                             if (db.Connect(false))
                             {
-                                ra = new RegionAnalyzer(data);
+                                ra = new RegionAnalyzer(data, 3);
                                 ra.Analyze();
                                 data.Clear();
                             }
@@ -118,25 +118,6 @@ namespace RegionExtractor
                         GraphDatabaseConnection gdc = new GraphDatabaseConnection();
                         gdc.Connect();
                         gdc.Reset();
-                        break;
-                    }
-
-                case "4":
-                    {
-                        // Initialize a database connection
-                        db = new DatabaseConnection();
-
-                        // Check if connection was successful
-                        if (db.Connect(true))
-                        {
-                            data = db.GetData();
-                            if (db.Connect(false))
-                            {
-                                ra = new RegionAnalyzer(data);
-                                
-                                data.Clear();
-                            }
-                        }
                         break;
                     }
 
